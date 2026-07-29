@@ -553,10 +553,7 @@
             await esriId.getCredential(sharingUrl);   // redirects, then returns here
           }
         } catch (e) {
-          document.body.insertAdjacentHTML("afterbegin",
-            `<div style="background:#FDECEA;color:#A8322D;border-bottom:2px solid #A8322D;padding:10px 16px;font:600 .85rem system-ui;">
-               Could not sign in to ArcGIS (${String(e && e.message || e)}). Restricted layers will not load.
-             </div>`);
+          console.error("ArcGIS sign-in failed:", e);
         }
       }
 
@@ -927,22 +924,7 @@
         }
         return [...set].sort((a, b) => (a === "None") - (b === "None") || a.localeCompare(b));
       }
-      // Load every housing layer, but don't let one failure kill the whole page.
-      // A restricted layer with no signed-in user rejects here (403) — surface
-      // that plainly rather than leaving an empty map with no explanation.
-      const loadResults = await Promise.allSettled(HOUSING_LAYERS.map(c => housing[c.id].load()));
-      const failed = HOUSING_LAYERS
-        .map((c, i) => ({ cfg: c, r: loadResults[i] }))
-        .filter(x => x.r.status === "rejected");
-      if (failed.length) {
-        const names = failed.map(x => x.cfg.title).join(", ");
-        const looksAuth = failed.some(x => /403|forbidden|token|unauthor/i.test(String(x.r.reason && x.r.reason.message || x.r.reason)));
-        document.body.insertAdjacentHTML("afterbegin",
-          `<div style="background:#FDECEA;color:#A8322D;border-bottom:2px solid #A8322D;padding:10px 16px;font:600 .85rem system-ui;">
-             Could not load: ${names}.${looksAuth ? " This looks like a permissions problem — these layers are not shared publicly, so the dashboard needs an ArcGIS sign-in (set AUTH.appId in config)." : ""}
-           </div>`);
-        console.error("Housing layer load failures:", failed.map(x => [x.cfg.id, x.r.reason]));
-      }
+      await Promise.all(HOUSING_LAYERS.map(c => housing[c.id].load()));
       // Only publish through FY26 (ending June 30, 2026); hide FY27+ from the year filter.
       const publishedYears = (await unionDistinct("year")).filter(y => {
         const end = parseInt(String(y).split("-")[1], 10);
