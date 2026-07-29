@@ -37,10 +37,20 @@ export const MODE = "internal";
  *      http://localhost:8081 too if you want local dev to sign in.
  *   3. Paste the resulting Client ID below.
  *
- * Leave as null while the layers are public — the app then loads anonymously.  */
+ * The three resident-level layers are now shared ORG ONLY, so this is required:
+ * without it the SDK waits forever for a token and the page never loads.
+ *
+ * The client ID is public by design. For a browser (public) OAuth client there
+ * is no secret — security comes from the redirect-URI allowlist registered on
+ * the app item, which is why it is safe in a public repo.
+ *
+ * Registered app: https://ral.maps.arcgis.com/home/item.html?id=f68c5b8e754e4d05905208e425f6bb2b
+ * Redirect URIs registered: https://maryelizardbeth.github.io , http://localhost:8081  */
 export const AUTH = {
-  appId: null,
-  portalUrl: "https://www.arcgis.com",
+  appId: "cErYCyvJjyUemAOc",
+  // The Raleigh org portal, not the generic www.arcgis.com — sends users
+  // straight to the City's sign-in rather than a generic org prompt.
+  portalUrl: "https://ral.maps.arcgis.com",
 };
 
 /* --- Housing layers — REAL resident-level layers ---------------------------
