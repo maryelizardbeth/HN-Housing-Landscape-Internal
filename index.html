@@ -16,63 +16,14 @@
       <div class="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcomeHeading">
         <button class="welcome-close" id="welcomeClose" aria-label="Close">&times;</button>
 
-        <div class="welcome-panel" data-step="1">
-          <h2 id="welcomeHeading">City of Raleigh Housing Production Dashboard</h2>
-          <p>Welcome to the City of Raleigh's Housing Production Dashboard. In this dashboard you will find demographic data and housing production data for the City of Raleigh.</p>
-          <p>This dashboard has three components—an interactive map, a section of interactive charts detailing overall production data, and a section of interactive charts specific to the 2020 Housing Bond.</p>
-        </div>
-
-        <div class="welcome-panel" data-step="2">
-          <h2>Housing Landscape Map</h2>
-          <p>What this interactive dashboard map contains:</p>
-          <p class="welcome-subhead">Demographic data:</p>
-          <ul>
-            <li>Median rent</li>
-            <li>Vacancy rate</li>
-            <li>Count of total rental units</li>
-            <li>% Vacant housing units</li>
-            <li>% Owner-occupied housing units</li>
-            <li>% Homeowners cost-burdened / severely cost-burdened</li>
-            <li>% Renters cost-burdened / severely cost-burdened</li>
-          </ul>
-          <p class="welcome-subhead">Housing production data:</p>
-          <ul>
-            <li>On affordable housing construction and preservation.</li>
-            <li>Information on affordable and subsidized housing projects that are not City-funded.</li>
-          </ul>
-          <p class="welcome-subhead">Geographic context:</p>
-          <ul>
-            <li>Transit options</li>
-            <li>Council districts</li>
-            <li>Neighborhood Conservation Overlay Districts</li>
-          </ul>
-          <p>In the map section, you can find information on City-funded projects as well as non-City funded affordable housing, such as affordable housing that received federal funding.</p>
-          <p class="welcome-subhead">Helpful information:</p>
-          <p>For the interactive map, units are counted as "Complete" once they have received a Certificate of Occupancy. Units in the "Pipeline" are units either under construction or in the pre-construction phase.</p>
-        </div>
-
-        <div class="welcome-panel" data-step="3">
-          <p class="welcome-eyebrow">Overall production charts section</p>
-          <h2>Raleigh's Housing Production by the Numbers</h2>
-          <p class="welcome-subhead">About the City of Raleigh's Housing Production Dashboard</p>
-          <p>For this interactive chart section, units are counted as "Complete" at different times.</p>
-          <p>For Housing Development, both Preservation and New Construction, units are considered "Completed" when they have received a Certificate of Occupancy. Until then (i.e., when they are in Pre-Construction or Under Construction), they are considered in the "Pipeline".</p>
-          <p>Home Buyer Assistance projects are considered "Complete" once homeowners have received the assistance funds from the City of Raleigh.</p>
-          <p>Home Repair units are considered "Complete" when all construction work has been finished.</p>
-        </div>
-
-        <div class="welcome-panel" data-step="4">
-          <p class="welcome-eyebrow">2020 Housing Bond section</p>
-          <h2>2020 Housing Bond</h2>
-          <p>This section contains information only regarding housing production and preservation funded by the 2020 Housing Bond.</p>
-          <p>All units in this section are tracked by commitment.</p>
-        </div>
-
-        <div class="welcome-panel" data-step="5">
-          <h2>Disclaimer &amp; Contact</h2>
+        <!-- The click-through guide moved into per-section info boxes on the page
+             itself; this dialog is now only the disclaimer + acknowledgement. -->
+        <div class="welcome-panel active" data-step="1">
+          <h2 id="welcomeHeading">Disclaimer &amp; Contact</h2>
           <p>The information provided in this dashboard is for general informational purposes only. It is updated periodically by City of Raleigh staff, and while every effort is made to ensure its accuracy and completeness, the City makes no warranties or guarantees regarding the data presented here. This dashboard is a prototype intended for internal staff use and is not an official public record.</p>
           <p>Questions, feedback, or corrections about this dashboard can be directed to the City of Raleigh Housing &amp; Neighborhoods Department at <em>housing@raleighnc.gov</em>.</p>
-          <p>By clicking "I Agree" below, you acknowledge that you have read and understand the information presented in this welcome guide.</p>
+          <p>Guidance on what each section contains is available in the <strong>About</strong> boxes at the top of the map, production and 2020 Bond sections.</p>
+          <p>By clicking "I Agree" below, you acknowledge that you have read and understand the information presented here.</p>
           <label class="welcome-agree-row">
             <input type="checkbox" id="welcomeAgreeCheck" />
             I agree to the terms and conditions of use for this dashboard.
@@ -80,61 +31,48 @@
         </div>
 
         <div class="welcome-footer">
-          <div class="welcome-dots" id="welcomeDots"></div>
           <div class="welcome-buttons">
-            <button class="btn secondary" id="welcomeBack">Back</button>
-            <button class="btn" id="welcomeNext">Next</button>
-            <button class="btn" id="welcomeAgree" style="display:none;" disabled>I Agree</button>
+            <button class="btn" id="welcomeAgree" disabled>I Agree</button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Reconciliation detail for the "City housing by geography" section. Populated
+         at runtime once both the summary table and the point layers have loaded. -->
+    <div class="info-overlay" id="reconOverlay">
+      <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="reconHeading">
+        <button class="welcome-close" id="reconClose" aria-label="Close">&times;</button>
+        <h2 id="reconHeading">Why the mapped totals differ from the citywide totals</h2>
+        <p>
+          The tiles in this section are counted from the <strong>mapped point layers</strong>. The citywide totals
+          at the top of the page come from the <strong>Housing Production Tracker summary table</strong>, which is the
+          reported source of truth. They are measuring different things, so they are not expected to agree. Every
+          figure below is calculated live from the same data feeding this page.
+        </p>
+        <div id="reconTableWrap" style="overflow-x:auto;"></div>
+        <p class="note" id="reconNotes" style="margin-top:14px;"></p>
+      </div>
+    </div>
+
     <script>
       (function () {
+        /* Single-panel disclaimer. The multi-step guide it used to wrap now lives
+         * in the on-page "About" boxes, so there is no step/dot navigation left. */
         var STORAGE_KEY = "raleighDashboardWelcomeSeen";
         var overlay = document.getElementById("welcomeOverlay");
-        var panels = Array.prototype.slice.call(document.querySelectorAll(".welcome-panel"));
-        var dotsWrap = document.getElementById("welcomeDots");
-        var backBtn = document.getElementById("welcomeBack");
-        var nextBtn = document.getElementById("welcomeNext");
         var agreeBtn = document.getElementById("welcomeAgree");
         var agreeCheck = document.getElementById("welcomeAgreeCheck");
         var closeBtn = document.getElementById("welcomeClose");
-        var total = panels.length;
-        var step = 1;
-
-        panels.forEach(function () {
-          var dot = document.createElement("span");
-          dotsWrap.appendChild(dot);
-        });
-        var dots = Array.prototype.slice.call(dotsWrap.children);
-
-        function render() {
-          panels.forEach(function (p) {
-            p.classList.toggle("active", Number(p.getAttribute("data-step")) === step);
-          });
-          dots.forEach(function (d, i) {
-            d.classList.toggle("active", i === step - 1);
-          });
-          backBtn.style.visibility = step === 1 ? "hidden" : "visible";
-          var onLastStep = step === total;
-          nextBtn.style.display = onLastStep ? "none" : "inline-block";
-          agreeBtn.style.display = onLastStep ? "inline-block" : "none";
-        }
 
         function close() {
           overlay.classList.remove("open");
           try { localStorage.setItem(STORAGE_KEY, "true"); } catch (e) {}
         }
 
-        backBtn.addEventListener("click", function () { if (step > 1) { step--; render(); } });
-        nextBtn.addEventListener("click", function () { if (step < total) { step++; render(); } });
         agreeCheck.addEventListener("change", function () { agreeBtn.disabled = !agreeCheck.checked; });
         agreeBtn.addEventListener("click", close);
         closeBtn.addEventListener("click", close);
-
-        render();
 
         var alreadySeen = false;
         try { alreadySeen = localStorage.getItem(STORAGE_KEY) === "true"; } catch (e) {}
@@ -155,8 +93,63 @@
       </nav>
     </header>
 
+    <!-- Section "About" boxes. These carry the guidance that used to sit behind
+         the multi-step welcome pop-up; each is collapsible so it can be folded
+         away once read, and the copy matches the approved language doc. -->
+    <div class="info-wrap">
+      <details class="info-box" open>
+        <summary>City of Raleigh Housing Production Dashboard</summary>
+        <div class="info-box-body">
+          <p>Welcome to the City of Raleigh's Housing Production Dashboard. In this dashboard you will find demographic data and housing production data for the City of Raleigh.</p>
+          <p>This dashboard has three components—an interactive map, a section of interactive charts detailing overall production data, and a section of interactive charts specific to the 2020 Housing Bond.</p>
+        </div>
+      </details>
+    </div>
+
     <div class="section-band" style="border-top: 10px solid var(--leaf-green);">
       <h1>Housing Landscape Map</h1>
+    </div>
+
+    <div class="info-wrap">
+      <details class="info-box" open>
+        <summary>What this interactive dashboard map contains</summary>
+        <div class="info-box-body">
+          <div class="info-cols">
+            <div>
+              <p class="info-subhead">Demographic data</p>
+              <ul>
+                <li>Median contract rent (excludes utilities)</li>
+                <li>Median household income</li>
+                <li>Median home value</li>
+                <li>Count of renter-occupied housing units</li>
+                <li>% Vacant housing units</li>
+                <li>% Owner-occupied and % renter-occupied</li>
+                <li>% Homeowners cost-burdened / severely cost-burdened</li>
+                <li>% Renters cost-burdened / severely cost-burdened</li>
+              </ul>
+            </div>
+            <div>
+              <p class="info-subhead">Housing production data</p>
+              <ul>
+                <li>On affordable housing construction and preservation.</li>
+                <li>Information on affordable and subsidized housing projects that are not City-funded.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="info-subhead">Geographic context</p>
+              <ul>
+                <li>Transit options</li>
+                <li>Council districts</li>
+                <li>Neighborhood Conservation Overlay Districts</li>
+              </ul>
+            </div>
+          </div>
+          <p>In the map section, you can find information on City-funded projects as well as non-City funded affordable housing, such as affordable housing that received federal funding.</p>
+          <p class="info-subhead">Helpful information</p>
+          <p>For the interactive map, units are counted as "Complete" once they have received a Certificate of Occupancy. Units in the "Pipeline" are units either under construction or in the pre-construction phase.</p>
+          <p>You may notice that City Housing Development constructed prior to 2025-2026 doesn't have quite as much information as the City Housing Development in the pipeline or completed in 2025-2026. Our methodology for tracking our housing production changed in FY 25-26. We are working on adding additional information on prior years in future iterations of this dashboard.</p>
+        </div>
+      </details>
     </div>
 
     <!-- ============================ MAP SECTION ============================ -->
@@ -179,21 +172,21 @@
           <div class="field"><label for="fStatus">Status</label>
             <select id="fStatus"><option value="">All</option><option value="Complete">Complete</option><option value="Pipeline">In pipeline</option></select>
           </div>
-          <div class="field"><label for="fFunding">City funding source</label><select id="fFunding"><option value="">Any source</option></select></div>
           <div class="field">
-            <label for="loanMinN">City funding — City of Raleigh loan ($)</label>
-            <div class="range-wrap">
-              <div class="range-track"></div>
-              <div class="range-fill" id="loanFill"></div>
-              <input type="range" id="loanMinR" min="0" max="100" step="1" value="0" aria-label="Minimum loan amount" />
-              <input type="range" id="loanMaxR" min="0" max="100" step="1" value="100" aria-label="Maximum loan amount" />
+            <!-- The Any/All buttons sit on the label row so they read as belonging
+                 to this filter specifically, not to the panel as a whole. -->
+            <div class="field-head">
+              <label id="fFundingLabel">City funding source</label>
+              <span class="seg-caption">match</span>
+              <div class="seg" id="fFundingMode" role="group" aria-labelledby="fFundingLabel">
+                <button type="button" class="seg-btn is-active" data-mode="any" aria-pressed="true"
+                        title="Show records that use ANY of the selected funding sources">Any</button>
+                <button type="button" class="seg-btn" data-mode="all" aria-pressed="false"
+                        title="Show records that use ALL of the selected funding sources">All</button>
+              </div>
             </div>
-            <div class="range-inputs">
-              <input type="number" id="loanMinN" min="0" placeholder="min" />
-              <span>to</span>
-              <input type="number" id="loanMaxN" min="0" placeholder="max" />
-            </div>
-            <div class="range-label" id="loanLabel"></div>
+            <div class="checks" id="fFundingChecks"></div>
+            <div class="note" style="margin-top:6px;">This is only reflective of funding sources for the year 2025-2026. We are working on updating past years in future iterations of the dashboard.</div>
           </div>
           <div class="field">
             <label for="unitMinN">Total units per project</label>
@@ -233,15 +226,16 @@
         <div class="panel-section">
           <h2>Subsidized / HUD housing</h2>
           <div class="checks" id="hudToggles"></div>
+          <div class="note" id="lihtcHint" style="display:none;">To see where the City has also supported LIHTC development, make sure to also select the "City Housing Development" layer above.</div>
           <div class="note">Non-City-funded subsidized housing from HUD (filtered to Wake County), including
           Raleigh Housing Authority (RHA) public housing. Distinct marker shapes; City projects are circles.</div>
         </div>
 
         <div class="panel-section">
-          <h2>Market Supply Indicators</h2>
+          <h2>Census (ACS) Indicators</h2>
           <div class="checks" id="marketToggles"></div>
-          <div class="note" id="marketNote">Census (ACS) housing-market context by block group. More sources (non-Census)
-          will be added here later.</div>
+          <div class="note" id="marketNote">American Community Survey 5-year estimates by census tract, Wake County.
+          Turning a layer on opens its attribute table below the map.</div>
         </div>
 
         <div class="panel-section">
@@ -260,10 +254,10 @@
             <div class="legend-item"><span class="swatch" style="background:#189ABC;width:9px;height:9px;"></span> Homeowner rehab (approx.)</div>
             <div class="legend-item"><span class="swatch" style="background:#01426A;width:9px;height:9px;"></span> Homebuyer assistance (approx.)</div>
           </div>
-          <div class="legend-item" style="margin-top:8px;"><span style="color:#01426A;font-size:1rem;">■</span> HUD Public Housing (incl. RHA)</div>
-          <div class="legend-item"><span style="color:#189ABC;font-size:1rem;">◆</span> HUD Multifamily Assisted (Sec 8/202/811)</div>
-          <div class="legend-item"><span style="color:#FBAE40;font-size:1rem;">▲</span> LIHTC properties</div>
-          <div class="legend-item"><span style="color:#A8322D;font-size:1rem;">✕</span> HUD-Insured Multifamily</div>
+          <div class="legend-item" style="margin-top:8px;"><span style="color:#01426A;font-size:1rem;">■</span> HUD Public Housing properties</div>
+          <div class="legend-item"><span style="color:#189ABC;font-size:1rem;">◆</span> Multifamily Assisted (Section 8, 202, 811)</div>
+          <div class="legend-item"><span style="color:#FBAE40;font-size:1rem;">▲</span> Low Income Housing Tax Credit properties (LIHTC)</div>
+          <div class="legend-item"><span style="color:#99bbff;font-size:1rem;">✕</span> HUD-Insured Multifamily</div>
         </div>
 
         <div class="panel-section" id="dataNotes">
@@ -285,6 +279,17 @@
             <arcgis-legend></arcgis-legend>
           </arcgis-expand>
         </arcgis-map>
+
+        <!-- Attribute table for the Census (ACS) choropleths. Hidden until a
+             choropleth layer is switched on; one tab per active layer. Built
+             at runtime in the choropleth section of the script below. -->
+        <div id="attrDock" hidden>
+          <div id="attrDockBar">
+            <div id="attrDockTabs"></div>
+            <button type="button" id="attrDockClose" title="Hide the attribute table">Hide table</button>
+          </div>
+          <div id="attrDockBody"></div>
+        </div>
       </div>
     </section>
 
@@ -294,6 +299,17 @@
     </div>
 
     <div id="dashboard" class="dash-wrap">
+      <details class="info-box" open>
+        <summary>Raleigh's Housing Production by the Numbers</summary>
+        <div class="info-box-body">
+          <p class="info-subhead">About the City of Raleigh's Housing Production Dashboard</p>
+          <p>For this interactive chart section, units are counted as "Complete" at different times.</p>
+          <p>For Housing Development, both Preservation and New Construction, units are considered "Completed" when they have received a Certificate of Occupancy. Until then (i.e. when they are in Pre-Construction or Under Construction), they are considered in the "Pipeline".</p>
+          <p>Home Buyer Assistance projects are considered "Complete" once homeowners have received the assistance funds from the City of Raleigh.</p>
+          <p>Home Repair units are considered "Complete" when all construction work has been finished.</p>
+        </div>
+      </details>
+
       <h2 style="color:var(--raleigh-green);font-size:1.05rem;margin:4px 0 4px;">Citywide production</h2>
       <div><span class="src-badge" id="truthBadge">Source: Housing Production Tracker (aggregate table)</span></div>
       <div class="caveat" id="citywideCaveat" style="margin-top:8px;"></div>
@@ -344,16 +360,8 @@
       </div>
       <div class="card-grid">
         <div class="card">
-          <h3 style="margin:0 0 12px 0;">Units by funding source</h3>
-          <div class="chart-box" style="height: 300px;"><canvas id="fundingBySource"></canvas></div>
-        </div>
-        <div class="card">
           <h3 style="margin:0 0 12px 0;">Total funding by year</h3>
           <div class="chart-box" style="height: 300px;"><canvas id="fundingByYear"></canvas></div>
-        </div>
-        <div class="card">
-          <h3 style="margin:0 0 12px 0;">Units by income level</h3>
-          <div class="chart-box" style="height: 300px;"><canvas id="fundingByAMI"></canvas></div>
         </div>
       </div>
 
@@ -361,17 +369,15 @@
       <div><span class="src-badge">Source: City Housing Development layer (Project_Status = Pipeline)</span></div>
       <div class="caveat" id="pipelineCaveat" style="margin-top:8px;"></div>
       <div class="kpi-row" id="pipelineKpis" style="margin-top:14px;"></div>
-      <div style="display:grid;grid-template-columns:1fr 4fr;gap:18px;align-items:stretch;">
-        <div class="card" style="min-width:0;">
-          <h3 style="margin:0 0 12px 0;">Pipeline units by construction status</h3>
-          <div class="chart-box" style="height: 200px;"><canvas id="pipelineStatusChart"></canvas></div>
-        </div>
-        <div class="card" style="min-width:0;">
-          <h3 style="margin:0 0 12px 0;">Pipeline projects</h3>
-          <div class="table-scroll" style="max-height:280px;overflow-x:auto;"><table class="data-table" id="pipelineTable"></table></div>
-        </div>
+      <div class="card" style="min-width:0;">
+        <h3 style="margin:0 0 12px 0;">Pipeline projects</h3>
+        <div class="table-scroll" style="max-height:280px;overflow-x:auto;"><table class="data-table" id="pipelineTable"></table></div>
       </div>
 
+      <!-- Cut from External per 8.6.26 leadership call (Internal keeps it) --
+           see the MODE check near RESIDENT_ON_MAP for the removal + the
+           matching JS guard around the PROGRAMS/records setup below. -->
+      <div id="geographySection">
       <h2 style="color:var(--raleigh-green);font-size:1.15rem;margin:30px 0 4px;border-top:1px solid var(--border);padding-top:20px;">City housing by geography</h2>
       <div><span class="src-badge">Source: City Housing Development, Home Repair, Homebuyer Assistance, and Other Housing Impact layers (mapped point geometry)</span></div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 6px;">
@@ -381,14 +387,23 @@
         <select id="ncodSel" style="padding:7px 8px;font:inherit;font-size:.85rem;border:1px solid var(--border);border-radius:4px;"><option value="">All areas</option></select>
       </div>
       <div class="caveat" id="distCaveat">
-        Derived from the <strong>mapped point layers</strong> (geometry), not the aggregate tracker. These counts will
-        <strong>not match</strong> the citywide totals above: the de-identified layers exclude any records that could not be
-        geocoded, and "units" are counted per point rather than as the tracker reports them.
+        Derived from the <strong>mapped point layers</strong> (geometry), not the aggregate tracker. These counts include
+        <strong>both completed and pipeline</strong> units and will <strong>not match</strong> the citywide totals above:
+        the de-identified layers exclude any records that could not be geocoded, and "units" are counted per point rather
+        than as the tracker reports them.
       </div>
+      <!-- Reconciliation dialog trigger, hidden for now. The dialog and its
+           live calculation are still in place further down; restore this button
+           to switch it back on — nothing else needs changing.
+      <div style="margin-top:8px;">
+        <button type="button" class="btn secondary" id="reconOpen">More info — why these differ from the citywide totals</button>
+      </div>
+      -->
       <div class="kpi-row" id="distKpis" style="margin-top:14px;"></div>
       <div class="card wide">
         <h3 id="distChartTitle">Units by district and program</h3>
         <div class="chart-box"><canvas id="distChart"></canvas></div>
+      </div>
       </div>
 
     </div>
@@ -398,9 +413,31 @@
     </div>
 
     <div class="dash-wrap" style="padding-top: 14px;">
-      <h2 style="color:var(--raleigh-green);font-size:1.15rem;margin:4px 0 4px;">2020 Housing Bond Totals</h2>
+      <details class="info-box" open>
+        <summary>2020 Housing Bond</summary>
+        <div class="info-box-body">
+          <p>This section contains information only regarding housing production and preservation funded by the 2020 Housing Bond.</p>
+          <p>All units in this section are tracked by commitment.</p>
+        </div>
+      </details>
+
+      <!-- One section for everything 2020 Bond. The status filter drives the
+           project-level widgets; the bond-wide totals come from a table with no
+           complete/pipeline dimension, so those cards carry an "all statuses"
+           badge instead of silently ignoring the filter. -->
+      <div class="bond-filter-bar">
+        <label for="bondStatusFilter"><strong>Show</strong></label>
+        <select id="bondStatusFilter">
+          <option value="">Committed — complete &amp; pipeline</option>
+          <option value="Complete">Complete only</option>
+          <option value="Pipeline">Pipeline only</option>
+        </select>
+        <span class="bond-filter-note">Applies to the development-project figures. Bond-wide totals are not broken out by status in their source.</span>
+      </div>
+      <div class="caveat" id="bondCaveat" style="margin-top:10px;">Note: The 2020 Bond data below comes from a separate data source and is not tabulated in the same way as above. Be advised that totals will not always match.</div>
+
+      <h2 style="color:var(--raleigh-green);font-size:1.15rem;margin:18px 0 4px;">Bond-wide totals <span class="status-badge">all statuses</span></h2>
       <div><span class="src-badge">Source: 2020 Bond Tracker (f_2020_Bond_Tracker_Bond_2020_Totals)</span></div>
-      <div class="caveat" id="bondCaveat" style="margin-top:8px;">Note: The 2020 Bond data below comes from a separate data source and is not tabulated in the same way as above. Be advised that totals will not always match.</div>
 
       <div class="card-grid" style="margin-top:12px;">
         <div class="card bond">
@@ -414,63 +451,41 @@
         </div>
       </div>
 
-      <div class="card wide" style="margin-top:12px;">
-        <div class="table-scroll"><table class="data-table" id="bond2020Table"></table></div>
-        <div class="note" style="margin-top:10px;">Units and totals from the 2020 Bond Tracker table.</div>
-      </div>
+      <!-- Removed 2026-08-17: the fiscal-year x category pivot table
+           (bond2020Table), the "2020 Bonds Units by fiscal year" stacked chart
+           (bondStackedUnits), and the "2020 Bond Tracker Pivot" + its Metric
+           selector (bondPivotTable). The committed-vs-available gauge and
+           Committed-funding-by-category chart above are the ones kept. -->
 
-      <!-- Bond visualizations: keep stacked units chart and pivot table only (no CSV exports) -->
-      <div class="card-grid">
-        <div class="card bond wide">
-          <h4>2020 Bonds Units by fiscal year (by 2020 Bond Category)</h4>
-          <div class="chart-box"><canvas id="bondStackedUnits" style="height:240px;"></canvas></div>
-        </div>
-        <div class="card bond wide">
-          <h4>2020 Bond Tracker Pivot</h4>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <label for="pivotMetric">Metric</label>
-            <select id="pivotMetric" style="margin-left:6px;padding:6px;font:inherit;"><option value="Total_Units">Units</option><option value="Funds_Committed">Funds committed</option></select>
-          </div>
-          <div class="table-scroll"><table class="data-table" id="bondPivotTable"></table></div>
-        </div>
-      </div>
-
-      <h2 style="color:var(--raleigh-green);font-size:1.15rem;margin:30px 0 4px;border-top:1px solid var(--border);padding-top:20px;">2020 Housing Bond Development Projects (PPP, LIHTC Gap Financing, Site Acquisition Only)</h2>
-      <div><span class="src-badge">Source: 2020 Bond Tracker (f_2020_Bond_Tracker_Housing_Development_2020)</span></div>
+      <h2 style="color:var(--raleigh-green);font-size:1.15rem;margin:26px 0 4px;">Development projects <span id="bondDevScope" class="status-badge status-badge-live">complete &amp; pipeline</span></h2>
+      <div><span class="src-badge">Source: 2020 Bond Tracker (f_2020_Bond_Tracker_Housing_Development_2020) — PPP, LIHTC Gap Financing and Site Acquisition only</span></div>
 
       <div class="card-grid" style="margin-top:12px;">
         <div class="card bond wide">
           <h4>2020 Bond housing development summary</h4>
           <!-- Sits inside the card it describes, so it stays with the content on
                both builds instead of being stripped as a section banner. -->
-          <div class="caveat card-note" style="margin-top:0;margin-bottom:10px;">This section includes every project in the table, with no filtering applied. Financial fields are intentionally excluded from the summary KPIs.</div>
+          <div class="caveat card-note" id="bondDevCaveat" style="margin-top:0;margin-bottom:10px;"></div>
           <div class="kpi-row" id="bondDevKpis" style="margin-top:6px;"></div>
         </div>
       </div>
+      <!-- Removed 2026-08-17: "units by status" (pipeline v complete) and
+           "units (cumulative)". Category is the one chart kept here. -->
       <div class="card-grid">
         <div class="card">
           <h4>2020 Bond housing development units by category</h4>
           <div class="chart-box"><canvas id="bondDevByCategory"></canvas></div>
-        </div>
-        <div class="card">
-          <h4>2020 Bond housing development units by status</h4>
-          <div class="chart-box"><canvas id="bondDevByStatus"></canvas></div>
-        </div>
-        <div class="card">
-          <h4>2020 Bond housing development units (cumulative)</h4>
-          <div class="chart-box"><canvas id="bondDevCumulative"></canvas></div>
+          <!-- Units come from the Bond 2020 Totals table rather than the project
+               rows, so the Grosvenor single-count rule is applied. Populated by
+               renderBondDev(). -->
+          <div class="note" id="bondDevUnitsNote" style="margin-top:8px;"></div>
         </div>
       </div>
       <div class="card-grid">
         <div class="card wide">
-          <h4 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span>2020 Bond housing development projects</span>
-            <select id="bondDevStatusFilter" style="font:inherit;font-size:.8rem;font-weight:400;padding:4px 6px;border:1px solid var(--border);border-radius:4px;">
-              <option value="">All statuses</option>
-              <option value="Complete">Complete</option>
-              <option value="Pipeline">Pipeline</option>
-            </select>
-          </h4>
+          <!-- Status is driven by the section-level filter at the top now, so the
+               per-table selector that used to live here has been removed. -->
+          <h4>2020 Bond housing development projects</h4>
           <div class="table-scroll"><table class="data-table" id="bondDevList"></table></div>
         </div>
       </div>
@@ -483,6 +498,7 @@
       import {
         MAP, HOUSING_LAYERS, HUD_LAYERS, REFERENCE_LAYERS, SUMMARY_TABLE,
         DEV_FIELDS, REHAB_FIELDS, HBA_FIELDS, OTHER_FIELDS, BRAND,
+        FUNDING_SOURCES,
         MODE, UI, AUTH,
       } from "./config.js";
 
@@ -512,6 +528,12 @@
       // dashboard charts can query them — they just never reach the map.
       const MAPPED_LAYERS = HOUSING_LAYERS.filter(c => c.showOnMap !== false);
       const RESIDENT_ON_MAP = MAPPED_LAYERS.some(c => c.kind !== "dev");
+      /* Noun for the filter result count. "developments" is only accurate when the
+       * map is development-only (External); with resident-level layers mapped
+       * (Internal) a home repair or homebuyer loan is not a development, so the
+       * neutral noun is used. Derived from what is actually mapped rather than
+       * from MODE, so it stays correct if showOnMap ever changes.               */
+      const RESULT_NOUN = RESIDENT_ON_MAP ? ["record", "records"] : ["development", "developments"];
 
       // Sidebar copy that differs by build.
       const dataNotesBody = document.getElementById("dataNotesBody");
@@ -522,9 +544,15 @@
       // The three resident-program legend swatches describe layers that are not
       // on the External map at all.
       if (!RESIDENT_ON_MAP) document.getElementById("legendResident")?.remove();
+      // "City housing by geography" cut from External per 8.6.26 leadership call.
+      // Removed here (not just left empty) so the section's setup code further
+      // down can skip its layer queries entirely rather than fetching data for
+      // a section nobody will see.
+      if (MODE === "external") document.getElementById("geographySection")?.remove();
 
-      const [FeatureLayer, VectorTileLayer, Basemap] = await Promise.all([
+      const [FeatureLayer, GeoJSONLayer, VectorTileLayer, Basemap] = await Promise.all([
         $arcgis.import("@arcgis/core/layers/FeatureLayer.js"),
+        $arcgis.import("@arcgis/core/layers/GeoJSONLayer.js"),
         $arcgis.import("@arcgis/core/layers/VectorTileLayer.js"),
         $arcgis.import("@arcgis/core/Basemap.js"),
       ]);
@@ -578,6 +606,13 @@
       /* ---- formatters ---------------------------------------------------- */
       const num  = (v) => (v == null || String(v).trim() === "") ? 0 : Number(v);
       const fmtMoney = (v) => (v == null || v === "") ? "—" : "$" + Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 });
+      /* "FY 21-22" from the fiscal year's END year. "FY22" alone is ambiguous —
+       * it reads as calendar 2022 rather than the 2021-22 fiscal year. Falls back
+       * to the raw value if it isn't a year, so odd data still renders.        */
+      const fyFull = (endYear) => {
+        const y = parseInt(endYear, 10);
+        return y ? `FY ${String(y - 1).slice(2)}-${String(y).slice(2)}` : String(endYear ?? "");
+      };
       const fmtNum   = (v) => (v == null || v === "") ? "—" : Number(v).toLocaleString("en-US");
       const fmtDate  = (v) => {
         if (v == null || v === "") return "—";
@@ -626,11 +661,12 @@
       function devPopup(a) {
         const F = DEV_FIELDS;
         const isComplete = clean(a[F.projectStatus]) === "Complete";
-        const funds = F.fundingAmounts.filter(([f]) => num(a[f]) > 0).map(([f, lbl]) => `${lbl}: ${fmtMoney(a[f])}`);
+        const fundPairs = F.fundingAmounts.filter(([f]) => num(a[f]) > 0);
+        const funds = fundPairs.map(([f, lbl]) => `${lbl}: ${fmtMoney(a[f])}`);
         let h = `<div class="pop"><table>`;
         h += row("Developer", cleanTracked(a[F.developer]) || "—");
         h += row("Address", clean(a[F.address]) || "—");
-        h += row("Development Status", clean(a[F.status]) || clean(a[F.projectStatus]) || "—");
+        h += row("Development Status", clean(a[F.projectStatus]) || clean(a[F.status]) || "—");
         h += row("Fiscal year", clean(a[F.fiscalYear]) || "—");
         h += row("Total units", fmtNum(a[F.totalUnits]));
         if (num(a[F.homeownership]) > 0) h += row("Homeownership units", fmtNum(a[F.homeownership]));
@@ -638,10 +674,21 @@
         h += row("Construction Type", clean(a[F.construction]) || "—");
         h += row("LIHTC", clean(a[F.developmentType]) || "—");
         h += row("Council district", clean(a[F.council]) || "—");
-        h += row("Funding source", clean(a[F.fundingSource]) || "—");
+        /* "Multiple" is not useful on its own — resolve it to the actual sources
+         * using the broken-out funding fields that carry a value > 0. */
+        const fsRaw = clean(a[F.fundingSource]);
+        const fsText = (fsRaw && fsRaw.toLowerCase() === "multiple" && fundPairs.length)
+          ? fundPairs.map(([, lbl]) => lbl).join(" + ")
+          : (fsRaw || "—");
         // External: pipeline projects show funding SOURCE + units only.
         // Internal: dollar amounts and the AMI bar are shown for pipeline too.
         const showFin = isComplete || UI.showPipelineFinancials;
+        /* "Funding sources" below (itemized, with $ amounts) names every source
+         * this row would — it's a strict superset once it's showing, so this
+         * summary line was repeating the same source(s) a second time. Only
+         * shown when that breakdown isn't rendering: pipeline on External
+         * (no $ amounts there by design) or when no field has an amount > 0. */
+        if (!showFin || !fundPairs.length) h += row("Funding source", fsText);
         if (showFin) {
           h += row("Total City Contribution", fmtMoney(a[F.loanAmount]));
           if (funds.length) h += row("Funding sources", funds.join("<br>"));
@@ -736,16 +783,65 @@
 
       /* ---- HUD / subsidized layers -------------------------------------- */
       const firstNonNull = (a, keys) => { for (const k of keys) { const v = a[k]; if (v != null && String(v).trim() !== "") return String(v).trim(); } return null; };
-      const hudMarker = (style, color) => ({ type: "simple-marker", style, size: 8, color, outline: { color: "#ffffff", width: 1 } });
+      /* "x" and "cross" are stroke-only glyphs — SimpleMarkerSymbol draws no fill
+       * for them, so `color` never shows and the marker renders in the outline
+       * colour. With a white outline that made HUD-Insured Multifamily invisible.
+       *
+       * A single simple-marker has only one stroke, so it cannot carry both the
+       * layer colour and a halo. Stroke glyphs are drawn as a CIM symbol instead:
+       * the layer colour on top, over a slightly wider dark stroke that shows as
+       * a thin halo — which is what lets a light colour hold up against a pale
+       * basemap. Filled styles keep the plain simple-marker they always had.    */
+      const GLYPH_WIDTH = 3;            // visible stroke, in px
+      const GLYPH_HALO_WIDTH = 4.5;     // wider ⇒ ~0.75px of halo shows each side
+      const GLYPH_HALO_COLOR = [65, 64, 66, 100];   // #414042, neutral dark
+      const cimRgb = (hex) => {
+        const n = parseInt(String(hex).replace("#", ""), 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 100];
+      };
+      /* size === frame extent keeps stroke widths literal in pixels (scale 1:1) */
+      const strokeGlyph = (style, color, width) => ({
+        type: "CIMVectorMarker", enable: true, size: 10,
+        frame: { xmin: -5, ymin: -5, xmax: 5, ymax: 5 },
+        markerGraphics: [{
+          type: "CIMMarkerGraphic",
+          geometry: { paths: style === "x"
+            ? [[[-5, -5], [5, 5]], [[-5, 5], [5, -5]]]
+            : [[[-5, 0], [5, 0]], [[0, -5], [0, 5]]] },
+          symbol: { type: "CIMLineSymbol", symbolLayers: [
+            { type: "CIMSolidStroke", enable: true, width, color, capStyle: "Round" }] },
+        }],
+      });
+      const hudMarker = (style, color) => {
+        if (style !== "x" && style !== "cross") {
+          return { type: "simple-marker", style, size: 8, color, outline: { color: "#ffffff", width: 1 } };
+        }
+        return {
+          type: "cim",
+          data: { type: "CIMSymbolReference", symbol: { type: "CIMPointSymbol", symbolLayers: [
+            strokeGlyph(style, cimRgb(color), GLYPH_WIDTH),          // index 0 draws on top
+            strokeGlyph(style, GLYPH_HALO_COLOR, GLYPH_HALO_WIDTH),  // behind ⇒ halo
+          ] } },
+        };
+      };
       function hudPopup(hc, a) {
         const addr = hc.addr.map(k => a[k]).filter(v => v != null && String(v).trim() !== "").map(v => String(v).trim()).join(", ");
         let h = `<div class="pop"><table>`;
         if (addr) h += row("Address", addr);
         if (hc.units && a[hc.units] != null && String(a[hc.units]) !== "0") h += row("Units", fmtNum(a[hc.units]));
-        (hc.extra || []).forEach(([lbl, key]) => { const v = a[key]; if (v != null && String(v).trim() !== "" && String(v) !== "0") h += row(lbl, String(v).trim()); });
+        /* An `extra` entry may carry an optional third element: a value → display
+         * label map (e.g. shortening HUD's full authority names). Unmapped values
+         * fall through unchanged so nothing is ever silently dropped.           */
+        (hc.extra || []).forEach(([lbl, key, labels]) => {
+          const raw = a[key];
+          if (raw == null || String(raw).trim() === "" || String(raw) === "0") return;
+          const v = String(raw).trim();
+          h += row(lbl, (labels && labels[v]) || v);
+        });
         return h + `</table></div>`;
       }
       const hudToggles = document.getElementById("hudToggles");
+      const lihtcHint = document.getElementById("lihtcHint");
       for (const hc of HUD_LAYERS) {
         const fl = new FeatureLayer({
           url: hc.url, title: hc.title, id: hc.id, visible: hc.visible,
@@ -756,14 +852,209 @@
         viewEl.map.add(fl);
         const label = document.createElement("label");
         const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = hc.visible;
-        cb.addEventListener("change", () => (fl.visible = cb.checked));
+        cb.addEventListener("change", () => {
+          fl.visible = cb.checked;
+          // City-funded LIHTC development lives on the City Housing Development
+          // layer, not this one -- point people there while LIHTC is checked.
+          if (hc.id === "hud_lihtc" && lihtcHint) lihtcHint.style.display = cb.checked ? "" : "none";
+        });
         label.append(cb, document.createTextNode(" " + hc.title));
         hudToggles.appendChild(label);
       }
 
-      /* ---- reference + market-supply layers ----------------------------- *
-       * Choropleth (Census market indicators) render into their own
-       * "Market Supply Indicators" section; everything else into Reference.   */
+      const fmtByType = { currency: fmtMoney, number: fmtNum, percent: (v) => v == null ? "—" : Number(v).toFixed(1) + "%" };
+
+      /* ---- ratio indicators ---------------------------------------------- *
+       * A `ratio` indicator names its numerator and denominator fields once in
+       * config.base.js. Everything below is DERIVED from that single
+       * declaration: the field list to query, the Arcade expression the map
+       * draws with, the JavaScript that computes the class breaks, the popup,
+       * and the attribute table. They cannot drift apart, which matters because
+       * the cost-burden denominators are the whole reason those indicators are
+       * expressions rather than plain fields (see the notes in config.base.js). */
+      const rSum      = (a) => a.map((f) => `DefaultValue($feature.${f}, 0)`).join(" + ");
+      const rDenArc   = (r) => r.denMinus && r.denMinus.length
+        ? `(${rSum(r.den)}) - (${rSum(r.denMinus)})` : `(${rSum(r.den)})`;
+      /* minDen is the smallest denominator the rate may be computed on.
+       * Below it the value is suppressed rather than drawn, because a tract
+       * with six renter households all of them burdened is 100% and would
+       * otherwise sit in the darkest class beside a tract with eight hundred. */
+      const rMin        = (r) => r.minDen || 1;
+      const ratioArcade = (r) => `var n = ${rSum(r.num)};\nvar d = ${rDenArc(r)};\nreturn IIf(d >= ${rMin(r)}, n / d * 100, null);`;
+      const ratioDen    = (r, a) => {
+        const sum = (arr) => arr.reduce((t, f) => t + (Number(a[f]) || 0), 0);
+        return sum(r.den) - (r.denMinus ? sum(r.denMinus) : 0);
+      };
+      const ratioValue  = (r, a) => {
+        const d = ratioDen(r, a);
+        if (d < rMin(r)) return null;
+        return (r.num.reduce((t, f) => t + (Number(a[f]) || 0), 0) / d) * 100;
+      };
+      const indFields = (ind) => ind.ratio
+        ? [...ind.ratio.num, ...ind.ratio.den, ...(ind.ratio.denMinus || [])]
+        : [ind.field];
+      const indValue  = (ind, a) => ind.ratio ? ratioValue(ind.ratio, a) : a[ind.field];
+      /* Popup text is formatted in Arcade from the same declaration, so the
+       * map popup and the attribute table agree to the digit.                 */
+      const arcFmt = (f) => f === "currency" ? "'$#,##0'" : f === "percent" ? "'#,##0.0'" : "'#,##0'";
+      const arcSuf = (f) => f === "percent" ? " + '%'" : "";
+      const popupExpr = (ind) => ind.ratio
+        ? `var n = ${rSum(ind.ratio.num)};\nvar d = ${rDenArc(ind.ratio)};\n` +
+          `return IIf(d >= ${rMin(ind.ratio)}, Text(n / d * 100, ${arcFmt(ind.format)})${arcSuf(ind.format)}, ` +
+          `IIf(d > 0, 'Suppressed, only ' + Text(d) + ' households', 'No data'));`
+        : `return IIf(IsEmpty($feature.${ind.field}), 'No data', Text($feature.${ind.field}, ${arcFmt(ind.format)})${arcSuf(ind.format)});`;
+
+      /* ---- attribute table dock ------------------------------------------ *
+       * One tab per switched-on choropleth. Rows are built from the SAME query
+       * result that produced the class breaks, so the table can never show a
+       * number the map disagrees with. That is the failure mode of bolting a
+       * stock FeatureTable onto a layer whose symbology comes from an
+       * expression the table knows nothing about.                             */
+      const attrDock     = document.getElementById("attrDock");
+      const attrDockTabs = document.getElementById("attrDockTabs");
+      const attrDockBody = document.getElementById("attrDockBody");
+      const dockPanels   = new Map();          // layer id -> { tab, pane, sort }
+
+      document.getElementById("attrDockClose").addEventListener("click", () => { attrDock.hidden = true; });
+
+      function dockSelect(id) {
+        for (const [key, d] of dockPanels) {
+          const on = key === id;
+          d.tab.setAttribute("aria-selected", on ? "true" : "false");
+          d.pane.hidden = !on;
+        }
+      }
+      function dockOpen(rc) {
+        let d = dockPanels.get(rc.id);
+        if (!d) {
+          const tab = document.createElement("button");
+          tab.type = "button"; tab.textContent = rc.title;
+          tab.addEventListener("click", () => dockSelect(rc.id));
+          const pane = document.createElement("div");
+          attrDockTabs.appendChild(tab); attrDockBody.appendChild(pane);
+          d = { tab, pane, sort: { key: null, dir: 1 } };
+          dockPanels.set(rc.id, d);
+        }
+        attrDock.hidden = false;
+        dockSelect(rc.id);
+        return d;
+      }
+      function dockRemove(rc) {
+        const d = dockPanels.get(rc.id);
+        if (!d) return;
+        d.tab.remove(); d.pane.remove(); dockPanels.delete(rc.id);
+        if (!dockPanels.size) attrDock.hidden = true;
+        else dockSelect(dockPanels.keys().next().value);
+      }
+      function renderAttrTable(rc, ind, rows) {
+        const d = dockPanels.get(rc.id);
+        if (!d) return;
+        const fmt  = fmtByType[ind.format] || fmtNum;
+        const cols = [
+          ...(rc.tableFields || []).map((f) => ({
+            key: f, num: false,
+            label: f === "NAME" ? "Tract" : f === "GEOID" ? "GEOID (FIPS)" : f,
+          })),
+          { key: "__v", label: ind.label, num: true },
+        ];
+        /* Default sort is the indicator, descending, so the table opens on the
+         * tracts the chosen rendering is actually highlighting.               */
+        if (!d.sort.key || !cols.some((c) => c.key === d.sort.key)) d.sort = { key: "__v", dir: -1 };
+        const sorted = rows.slice().sort((a, b) => {
+          const k = d.sort.key, x = a[k], y = b[k];
+          if (x == null && y == null) return 0;
+          if (x == null) return 1;             // nulls last in both directions
+          if (y == null) return -1;
+          return (typeof x === "number" ? x - y : String(x).localeCompare(String(y))) * d.sort.dir;
+        });
+        const min = ind.ratio ? (ind.ratio.minDen || 1) : 1;
+        const withData   = rows.filter((r) => r.__v != null).length;
+        const suppressed = rows.filter((r) => r.__v == null && r.__d > 0 && r.__d < min).length;
+        const blankCell  = (r) => r.__d > 0 && r.__d < min
+          ? `<span class="nd" title="Rate suppressed: too small a base to be meaningful">Too few (${r.__d})</span>`
+          : '<span class="nd">No data</span>';
+        const esc = (v) => String(v).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+        d.pane.innerHTML =
+          `<div class="attr-meta">${rows.length} census tracts &middot; ${withData} with data` +
+          (suppressed ? ` &middot; ${suppressed} suppressed (fewer than ${min} households)` : "") +
+          ` &middot; <strong>${esc(ind.label)}</strong></div>` +
+          `<div class="attr-scroll"><table class="attr-table"><thead><tr>` +
+          cols.map((c) => `<th data-key="${c.key}" class="${c.num ? "n" : ""}${d.sort.key === c.key ? " sorted" : ""}">` +
+            `${esc(c.label)}${d.sort.key === c.key ? (d.sort.dir === 1 ? " ▲" : " ▼") : ""}</th>`).join("") +
+          `</tr></thead><tbody>` +
+          sorted.map((r) => "<tr>" + cols.map((c) => c.key === "__v"
+            ? `<td class="n">${r.__v == null ? blankCell(r) : esc(fmt(r.__v))}</td>`
+            : `<td>${r[c.key] == null ? "" : esc(r[c.key])}</td>`).join("") + "</tr>").join("") +
+          `</tbody></table></div>`;
+        d.pane.querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
+          const k = th.dataset.key;
+          d.sort = { key: k, dir: d.sort.key === k ? -d.sort.dir : (k === "__v" ? -1 : 1) };
+          renderAttrTable(rc, ind, rows);
+        }));
+      }
+
+      async function applyChoropleth(rc, layer, indicatorId, legendBox) {
+        const ind = rc.indicators.find((i) => i.id === indicatorId);
+        if (!ind || (!ind.field && !ind.ratio)) return;
+        try {
+          const q = layer.createQuery();
+          /* The layer's definitionExpression is NOT carried into this query --
+           * setting q.where replaces it outright. Verified: without the AND
+           * below, an indicator query on the ACS layers came back with Brevard
+           * County, Florida in the first row and hit the service's 1000-record
+           * ceiling, so both the map breaks and the table were computed from an
+           * arbitrary national slice. Always re-apply rc.where here.          */
+          const base = rc.where || "1=1";
+          q.where = ind.field ? `(${base}) AND ${ind.field} IS NOT NULL` : base;
+          q.returnGeometry = false;
+          q.outFields = [...new Set([...(rc.tableFields || []), ...indFields(ind)])];
+          const res = await layer.queryFeatures(q);
+          const rows = res.features.map((f) => {
+            const a = f.attributes, row = { __v: indValue(ind, a) };
+            // Denominator kept so a blank cell can distinguish "the Census
+            // published nothing" from "too few households to publish a rate".
+            row.__d = ind.ratio ? ratioDen(ind.ratio, a) : null;
+            (rc.tableFields || []).forEach((k) => { row[k] = a[k]; });
+            if (row.__v != null && isNaN(row.__v)) row.__v = null;
+            return row;
+          });
+          renderAttrTable(rc, ind, rows);
+
+          const vals = rows.map((r) => r.__v).filter((v) => v != null).sort((x, y) => x - y);
+          if (!vals.length) { legendBox.textContent = "No data for this indicator."; return; }
+          const n = 5, breaks = [];
+          for (let i = 1; i < n; i++) breaks.push(vals[Math.floor(vals.length * i / n)]);
+          const bounds = [vals[0], ...breaks, vals[vals.length - 1]];
+          const ramp = rc.ramp, fmt = fmtByType[ind.format] || fmtNum, infos = [];
+          for (let i = 0; i < n; i++) infos.push({
+            minValue: bounds[i], maxValue: bounds[i + 1],
+            symbol: { type: "simple-fill", color: ramp[i + 1], outline: { color: [255, 255, 255, 0.5], width: 0.4 } },
+            label: `${fmt(bounds[i])} – ${fmt(bounds[i + 1])}`,
+          });
+          layer.renderer = {
+            type: "class-breaks",
+            field: ind.field || undefined,
+            valueExpression: ind.ratio ? ratioArcade(ind.ratio) : undefined,
+            classBreakInfos: infos,
+            defaultSymbol: { type: "simple-fill", color: [200, 200, 200, 0.4], outline: { color: [255, 255, 255, 0.4], width: 0.3 } },
+            defaultLabel: ind.ratio && ind.ratio.minDen ? "No data or too few households" : "No data",
+          };
+          /* Legend entries carry the indicator name too, so with both ACS
+           * layers switched on the legend still says which is which.          */
+          layer.title = `${rc.title} — ${ind.label}`;
+          layer.popupTemplate = {
+            title: "Census Tract {NAME}, {County}",
+            content: `<b>${ind.label}</b>: {expression/val}`,
+            expressionInfos: [{ name: "val", title: ind.label, expression: popupExpr(ind) }],
+          };
+          legendBox.innerHTML = `<strong>${ind.label}</strong><br>` +
+            infos.map((i) => `<span style="display:inline-flex;align-items:center;gap:5px;margin:1px 8px 1px 0;"><span style="width:11px;height:11px;background:${i.symbol.color};border:1px solid #ccc;"></span>${i.label}</span>`).join("");
+        } catch (e) { legendBox.textContent = "Could not load indicator: " + e.message; }
+      }
+
+      /* ---- reference + Census (ACS) layers ------------------------------ *
+       * Choropleth layers render into their own "Census (ACS) Indicators"
+       * section; everything else into Reference.                             */
       const refToggles = document.getElementById("refToggles");
       const marketToggles = document.getElementById("marketToggles");
       const hexToRgba = (hex, a) => { const h = hex.replace("#", ""); return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16), a]; };
@@ -774,8 +1065,16 @@
         minScale: rc.kind === "transit" ? 60000 : 0,
       }] : undefined;
       function makeRenderer(rc) {
+        /* No fill, neutral outline. `color: null` (not a zero-alpha array) is
+         * the documented way to say "no fill" on a simple-fill symbol -- a
+         * transparent color array is a real value that some rendering paths
+         * treat differently from an actual absence of fill. Width bumped to
+         * 2px: at 1px the boundary reportedly wasn't rendering AT ALL (not
+         * just faint) even over open ground with nothing else competing for
+         * the same pixels, so erring toward "definitely visible" over
+         * "elegant" until that's confirmed fixed.                            */
         if (rc.kind === "boundary")
-          return { type: "simple", symbol: { type: "simple-fill", color: hexToRgba(rc.color, 0.07), outline: { color: rc.color, width: 1.5 } } };
+          return { type: "simple", symbol: { type: "simple-fill", color: null, outline: { color: "#414042", width: 2 } } };
         if (rc.kind === "transit")
           return { type: "simple", symbol: { type: "simple-line", color: rc.color, width: rc.width || 2, cap: "round", join: "round" } };
         return undefined;
@@ -790,81 +1089,97 @@
         const wrap = document.createElement("div");
         const label = document.createElement("label");
         const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = rc.visible;
-        const fl = new FeatureLayer({
-          url: rc.url, title: rc.title, visible: rc.visible, id: rc.id,
+        /* `localData` layers ship as GeoJSON in this repo instead of being
+         * fetched from their source service. Council Districts and NCODs come
+         * from maps.raleighnc.gov, which is blocked at the browser level
+         * (ERR_BLOCKED_BY_CLIENT) for at least some clients when the page is
+         * served from the public GitHub Pages domain -- both layers silently
+         * failed to load on the live site while working fine from localhost.
+         * See refresh_boundary_data.py for the diagnosis and how to
+         * regenerate the files.                                              */
+        const Ctor = rc.localData ? GeoJSONLayer : FeatureLayer;
+        const fl = new Ctor({
+          url: rc.localData || rc.url, title: rc.title, visible: rc.visible, id: rc.id,
           renderer: makeRenderer(rc), labelingInfo: labelInfo(rc),
           opacity: rc.kind === "choropleth" ? 0.72 : 1,
-          popupEnabled: !!makePopup(rc), popupTemplate: makePopup(rc) || undefined, outFields: ["*"],
+          popupEnabled: !!makePopup(rc), popupTemplate: makePopup(rc) || undefined,
+          /* GeoJSONLayer infers its fields from the file and rejects outFields
+           * ["*"], so it is only set for service-backed layers.              */
+          ...(rc.localData ? {} : { outFields: ["*"] }),
+          /* Only set when the config overrides it (e.g. council_districts,
+           * ncods) — everything else keeps inheriting whatever scale range the
+           * source service publishes.                                        */
+          ...(rc.minScale != null ? { minScale: rc.minScale } : {}),
+          ...(rc.maxScale != null ? { maxScale: rc.maxScale } : {}),
+          /* The ACS layers are NATIONAL. Without this every indicator query
+           * pulls ~85,000 tracts. Not cosmetic — it is the difference between
+           * a 230-row response and an unusable one.                          */
+          ...(rc.where ? { definitionExpression: rc.where } : {}),
         });
         viewEl.map.add(fl, 0);
-        cb.addEventListener("change", () => {
-          fl.visible = cb.checked;
-          if (rc.kind === "choropleth") indicatorWrap.style.display = cb.checked ? "" : "none";
-        });
-        // Census market indicators live in their own section (like HUD).
+        // Census (ACS) choropleths live in their own section (like HUD).
         const target = rc.kind === "choropleth" ? marketToggles : refToggles;
         label.append(cb, document.createTextNode(" " + rc.title));
         wrap.appendChild(label);
         target.appendChild(wrap);
 
+        /* The choropleth controls are built BEFORE the checkbox handler, and
+         * held in block-scoped `let`s, so each iteration's handler closes over
+         * its OWN dropdown.
+         *
+         * They used to be created afterwards and reached through a `var`. `var`
+         * is function-scoped, not block-scoped, so with two choropleth layers
+         * both checkbox handlers ended up pointing at the SECOND layer's
+         * dropdown. Toggling the first layer then looked up an indicator id
+         * that does not exist in its own config, `find` returned undefined, and
+         * applyChoropleth returned early: the layer switched on, the table
+         * docked, and nothing ever rendered, with no error anywhere. This was
+         * latent in the single-choropleth version and only became reachable
+         * when a second one was added.                                        */
+        let indicatorWrap = null, indicatorSel = null, indicatorLegend = null;
         if (rc.kind === "choropleth") {
-          var indicatorWrap = document.createElement("div");
+          indicatorWrap = document.createElement("div");
           indicatorWrap.style.cssText = "margin:6px 0 4px 22px;display:" + (rc.visible ? "" : "none");
-          const sel = document.createElement("select");
-          sel.style.cssText = "width:100%;padding:5px;font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:4px;";
-          rc.indicators.forEach(ind => { const o = document.createElement("option"); o.value = ind.id; o.textContent = ind.label; if (!ind.field && !ind.expr) o.disabled = true; sel.appendChild(o); });
-          sel.value = rc.defaultIndicator;
-          const legendBox = document.createElement("div"); legendBox.style.cssText = "margin-top:6px;font-size:.72rem;";
-          indicatorWrap.append(sel, legendBox);
-          target.appendChild(indicatorWrap);
-          sel.addEventListener("change", () => applyChoropleth(rc, fl, sel.value, legendBox));
-          applyChoropleth(rc, fl, sel.value, legendBox);
-        }
-      }
-      document.getElementById("refNote").innerHTML =
-        "Connected to City of Raleigh services (maps.raleighnc.gov &amp; Raleigh AGOL). " +
-        "Median gross rent &amp; cost-burden indicators are disabled until an ACS housing-cost layer is supplied.";
-
-      const fmtByType = { currency: fmtMoney, number: fmtNum, percent: (v) => v == null ? "—" : Number(v).toFixed(1) + "%" };
-      async function applyChoropleth(rc, layer, indicatorId, legendBox) {
-        const ind = rc.indicators.find(i => i.id === indicatorId);
-        if (!ind || (!ind.field && !ind.expr)) return;
-        try {
-          const q = layer.createQuery();
-          q.where = ind.field ? `${ind.field} IS NOT NULL` : "1=1";
-          q.returnGeometry = false;
-          q.outFields = ind.field ? [ind.field] : ["TOTHU_CY_1", "VACANT_CY_1"];
-          const res = await layer.queryFeatures(q);
-          const vals = res.features.map(f => {
-            const a = f.attributes;
-            if (ind.field) return a[ind.field];
-            return a.TOTHU_CY_1 > 0 ? (a.VACANT_CY_1 / a.TOTHU_CY_1) * 100 : null;
-          }).filter(v => v != null && !isNaN(v)).sort((x, y) => x - y);
-          if (!vals.length) return;
-          const n = 5, breaks = [];
-          for (let i = 1; i < n; i++) breaks.push(vals[Math.floor(vals.length * i / n)]);
-          const bounds = [vals[0], ...breaks, vals[vals.length - 1]];
-          const ramp = rc.ramp, fmt = fmtByType[ind.format] || fmtNum, infos = [];
-          for (let i = 0; i < n; i++) infos.push({
-            minValue: bounds[i], maxValue: bounds[i + 1],
-            symbol: { type: "simple-fill", color: ramp[i + 1], outline: { color: [255,255,255,0.5], width: 0.4 } },
-            label: `${fmt(bounds[i])} – ${fmt(bounds[i + 1])}`,
+          indicatorSel = document.createElement("select");
+          indicatorSel.style.cssText = "width:100%;padding:5px;font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:4px;";
+          /* An indicator is selectable if it has a field OR a ratio. Testing
+           * for the old `expr` key here greyed out every ratio indicator,
+           * which is four of the nine.                                        */
+          rc.indicators.forEach((ind) => {
+            const o = document.createElement("option");
+            o.value = ind.id; o.textContent = ind.label;
+            if (!ind.field && !ind.ratio) o.disabled = true;
+            indicatorSel.appendChild(o);
           });
-          layer.renderer = {
-            type: "class-breaks", field: ind.field || undefined, valueExpression: ind.expr || undefined,
-            classBreakInfos: infos,
-            defaultSymbol: { type: "simple-fill", color: [200,200,200,0.4], outline: { color: [255,255,255,0.4], width: 0.3 } },
-            defaultLabel: "No data",
-          };
-          layer.popupTemplate = {
-            title: "Block Group {GEOID10}",
-            content: ind.field ? `${ind.label}: {expression/val}` : `${ind.label}: computed`,
-            expressionInfos: ind.field ? [{ name: "val", expression: `Text($feature.${ind.field})` }] : [],
-          };
-          legendBox.innerHTML = `<strong>${ind.label}</strong><br>` +
-            infos.map(i => `<span style="display:inline-flex;align-items:center;gap:5px;margin:1px 8px 1px 0;"><span style="width:11px;height:11px;background:${i.symbol.color};border:1px solid #ccc;"></span>${i.label}</span>`).join("");
-        } catch (e) { legendBox.textContent = "Could not load indicator: " + e.message; }
+          indicatorSel.value = rc.defaultIndicator;
+          indicatorLegend = document.createElement("div");
+          indicatorLegend.style.cssText = "margin-top:6px;font-size:.72rem;";
+          indicatorWrap.append(indicatorSel, indicatorLegend);
+          target.appendChild(indicatorWrap);
+          indicatorSel.addEventListener("change", () => {
+            // A new rendering is a new set of numbers, so bring the table back
+            // even if the user had hidden the dock.
+            dockOpen(rc);
+            applyChoropleth(rc, fl, indicatorSel.value, indicatorLegend);
+          });
+          /* Only render on load if the layer starts visible. Both ACS layers
+           * start off, so the (national) service is not touched until asked.  */
+          if (rc.visible) { dockOpen(rc); applyChoropleth(rc, fl, indicatorSel.value, indicatorLegend); }
+        }
+
+        cb.addEventListener("change", () => {
+          fl.visible = cb.checked;
+          if (rc.kind === "choropleth") {
+            indicatorWrap.style.display = cb.checked ? "" : "none";
+            // Turning a choropleth on opens its attribute table; turning it off
+            // takes that tab away again.
+            if (cb.checked) { dockOpen(rc); applyChoropleth(rc, fl, indicatorSel.value, indicatorLegend); }
+            else dockRemove(rc);
+          }
+        });
       }
+      document.getElementById("refNote").textContent =
+        "Connected to City of Raleigh services (maps.raleighnc.gov and Raleigh AGOL).";
 
       /* ---- housing layer toggles (with live match-count badges) --------- */
       const ht = document.getElementById("housingToggles");
@@ -901,8 +1216,31 @@
       fAmiChecks.innerHTML = AMI_LABELS.map((lbl, i) =>
         `<label><input type="checkbox" value="${i}" /> ${lbl} AMI</label>`).join("");
       const fAmi = [...fAmiChecks.querySelectorAll("input[type=checkbox]")];
-      const [fYear, fStatus, fFunding, fDevType, fDistrict, fNcod] =
-        ["fYear", "fStatus", "fFunding", "fDevType", "fDistrict", "fNcod"].map(id => document.getElementById(id));
+      /* City funding source is a multi-select over the canonical source list
+       * (not the raw Funding_Source values), plus an any/all combine mode.    */
+      const fFundingChecks = document.getElementById("fFundingChecks");
+      fFundingChecks.innerHTML = FUNDING_SOURCES.map((s, i) =>
+        `<label><input type="checkbox" value="${i}" /> ${s.label}</label>`).join("");
+      const fFunding = [...fFundingChecks.querySelectorAll("input[type=checkbox]")];
+      const fFundingMode = [...document.querySelectorAll("#fFundingMode .seg-btn")];
+      const fundMode = () => (fFundingMode.find(b => b.classList.contains("is-active")) || {}).dataset?.mode || "any";
+      const setFundMode = (mode) => fFundingMode.forEach(b => {
+        const on = b.dataset.mode === mode;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      const [fYear, fStatus, fDevType, fDistrict, fNcod] =
+        ["fYear", "fStatus", "fDevType", "fDistrict", "fNcod"].map(id => document.getElementById(id));
+
+      /* Field types vary by layer — a column that was empty at publish time can
+       * land as String, and `String > 0` is a hard query error. Only emit the
+       * numeric half of a funding test where the column really is numeric.    */
+      const NUMERIC_FIELD_TYPES = new Set(
+        ["small-integer", "integer", "single", "double", "long", "big-integer"]);
+      const isNumericField = (layer, name) => {
+        const f = (layer.fields || []).find(x => x.name.toLowerCase() === String(name).toLowerCase());
+        return !!f && NUMERIC_FIELD_TYPES.has(f.type);
+      };
 
       const fillSel = (sel, vals) => vals.forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
       // distinct values unioned across every housing layer that has the field
@@ -931,7 +1269,8 @@
         return !end || end <= 2026;
       });
       fillSel(fYear,     publishedYears);
-      fillSel(fFunding,  await unionDistinct("funding"));
+      // Funding source is driven by FUNDING_SOURCES, not by distinct values —
+      // the raw column includes "Multiple", which is not a source to filter on.
       fillSel(fDevType,  await unionDistinct("devType"));
       fillSel(fDistrict, await unionDistinct("district"));
       (await unionDistinct("ncod", true)).forEach(v => {
@@ -939,55 +1278,9 @@
         o.textContent = v === "None" ? "None (outside any NCOD)" : v; fNcod.appendChild(o);
       });
 
-      /* ---- City-funding slider (City of Raleigh loan $) ------------------ */
-      const loanMinR = document.getElementById("loanMinR"), loanMaxR = document.getElementById("loanMaxR");
-      const loanMinN = document.getElementById("loanMinN"), loanMaxN = document.getElementById("loanMaxN");
-      const loanFill = document.getElementById("loanFill"), loanLabel = document.getElementById("loanLabel");
-      async function loanBound() {
-        let mx = 0;
-        for (const id of ["housing_development", "homeowner_rehabs", "homebuyer_assistance"]) {
-          if (!mappedIds.has(id)) continue;   // slider range reflects mapped data only
-          const layer = housing[id];
-          try {
-            const q = layer.createQuery(); q.where = "1=1"; q.returnGeometry = false;
-            q.outStatistics = [{ statisticType: "max", onStatisticField: FILTERABLE[id].loan, outStatisticFieldName: "mx" }];
-            const r = await layer.queryFeatures(q); const v = r.features[0] && r.features[0].attributes.mx;
-            if (v != null) mx = Math.max(mx, v);
-          } catch (e) {}
-        }
-        return Math.max(1000, Math.ceil(mx / 10000) * 10000);
-      }
-      const LOAN_MAX = await loanBound(), LOAN_STEP = 1000;
-      [loanMinR, loanMaxR].forEach(s => { s.min = 0; s.max = LOAN_MAX; s.step = LOAN_STEP; });
-      loanMinR.value = 0; loanMaxR.value = LOAN_MAX; loanMinN.max = LOAN_MAX; loanMaxN.max = LOAN_MAX;
-      const loanIsActive = () => (+loanMinR.value > 0) || (+loanMaxR.value < LOAN_MAX);
-      function updateLoanUI() {
-        const lo = +loanMinR.value, hi = +loanMaxR.value;
-        loanFill.style.left = (lo / LOAN_MAX * 100) + "%";
-        loanFill.style.width = ((hi - lo) / LOAN_MAX * 100) + "%";
-        loanMinN.value = lo; loanMaxN.value = hi;
-        loanLabel.textContent = loanIsActive() ? `${fmtMoney(lo)} – ${fmtMoney(hi)}` : `Any amount (up to ${fmtMoney(LOAN_MAX)})`;
-      }
-      function clampFromRange(which) {
-        let lo = +loanMinR.value, hi = +loanMaxR.value;
-        if (lo > hi) { if (which === "min") loanMaxR.value = lo; else loanMinR.value = hi; }
-        updateLoanUI();
-      }
-      function applyFromNumbers() {
-        let lo = loanMinN.value === "" ? 0 : +loanMinN.value;
-        let hi = loanMaxN.value === "" ? LOAN_MAX : +loanMaxN.value;
-        if (isNaN(lo)) lo = 0; if (isNaN(hi)) hi = LOAN_MAX;
-        lo = Math.max(0, Math.min(lo, LOAN_MAX)); hi = Math.max(0, Math.min(hi, LOAN_MAX));
-        if (lo > hi) { const t = lo; lo = hi; hi = t; }
-        loanMinR.value = lo; loanMaxR.value = hi; updateLoanUI();
-      }
-      loanMinR.addEventListener("input", () => clampFromRange("min"));
-      loanMaxR.addEventListener("input", () => clampFromRange("max"));
-      loanMinR.addEventListener("change", applyFilters);
-      loanMaxR.addEventListener("change", applyFilters);
-      loanMinN.addEventListener("change", () => { applyFromNumbers(); applyFilters(); });
-      loanMaxN.addEventListener("change", () => { applyFromNumbers(); applyFilters(); });
-      updateLoanUI();
+      /* The City-of-Raleigh-loan ($) range filter was removed 2026-08-17 per
+       * request. FILTERABLE[].loan is kept in the field map -- it is still the
+       * loan-amount field name used elsewhere -- but nothing filters on it. */
 
       /* ---- Units-per-project slider (Total_Units, all 4 layers) ---------- */
       const unitMinR = document.getElementById("unitMinR"), unitMaxR = document.getElementById("unitMaxR");
@@ -1038,12 +1331,21 @@
       unitMaxN.addEventListener("change", () => { unitFromNumbers(); applyFilters(); });
       updateUnitUI();
 
+      /* Real implementation (if any) is installed by the "City housing by
+       * geography" setup further down — which only runs on Internal, since
+       * that section is cut from External. Declared here, always, as a no-op
+       * default so applyFilters (called on every filter change, including the
+       * very first page load) never has to know or care whether that section
+       * exists; it just calls this and the right thing happens either way.   */
+      let syncGeographyImpl = () => {};
+
       const sqlStr = (v) => "'" + String(v).replace(/'/g, "''") + "'";
       async function applyFilters() {
-        const eq = { year: fYear.value, status: fStatus.value, funding: fFunding.value, devType: fDevType.value, district: fDistrict.value, ncod: fNcod.value };
-        const lo = +loanMinR.value, hi = +loanMaxR.value, loanActive = loanIsActive();
+        const eq = { year: fYear.value, status: fStatus.value, devType: fDevType.value, district: fDistrict.value, ncod: fNcod.value };
         const ulo = +unitMinR.value, uhi = +unitMaxR.value, unitActive = unitIsActive();
         const amiChecked = fAmi.filter(cb => cb.checked).map(cb => +cb.value);
+        const fundChecked = fFunding.filter(cb => cb.checked).map(cb => FUNDING_SOURCES[+cb.value]);
+        const fundAll = fundMode() === "all";
         const results = await Promise.all(HOUSING_LAYERS.map(async cfg => {
           const layer = housing[cfg.id], map = FILTERABLE[cfg.id];
           const clauses = []; let eligible = true;
@@ -1052,9 +1354,19 @@
             if (!map[key]) { eligible = false; break; }   // layer lacks this field → hide + N/A
             clauses.push(`${map[key]} = ${sqlStr(val)}`);
           }
-          if (eligible && loanActive) {
-            if (!map.loan) eligible = false;
-            else clauses.push(`${map.loan} >= ${lo} AND ${map.loan} <= ${hi}`);
+          /* A record counts as using a source if the broken-out amount column
+           * carries a value, OR Funding_Source names that source outright.
+           * any → OR across the picked sources; all → AND.                    */
+          if (eligible && fundChecked.length) {
+            if (!map.funding) eligible = false;   // layer has no funding data → hide + N/A
+            else {
+              const parts = fundChecked.map(s => {
+                const tests = s.values.map(v => `${map.funding} = ${sqlStr(v)}`);
+                if (isNumericField(layer, s.field)) tests.unshift(`${s.field} > 0`);
+                return "(" + tests.join(" OR ") + ")";
+              });
+              clauses.push("(" + parts.join(fundAll ? " AND " : " OR ") + ")");
+            }
           }
           if (eligible && unitActive) {
             if (!map.units) eligible = false;
@@ -1074,18 +1386,27 @@
           return count;
         }));
         const total = results.reduce((s, n) => s + n, 0);
-        document.getElementById("resultCount").innerHTML = `<strong>${total.toLocaleString()}</strong> city housing record${total === 1 ? "" : "s"} shown on the map.`;
+        document.getElementById("resultCount").innerHTML = `<strong>${total.toLocaleString()}</strong> city housing ${total === 1 ? RESULT_NOUN[0] : RESULT_NOUN[1]} shown on the map.`;
         // keep the dashboard geography panel in sync with the map's district filter
-        syncGeography(fDistrict.value, "");
+        syncGeographyImpl(fDistrict.value, "");
         writeUrl(fDistrict.value);
       }
       // Every filter applies instantly (no Apply button).
-      [fYear, fStatus, fFunding, fDevType, fDistrict, fNcod].forEach(s => s.addEventListener("change", applyFilters));
+      [fYear, fStatus, fDevType, fDistrict, fNcod].forEach(s => s.addEventListener("change", applyFilters));
       fAmi.forEach(cb => cb.addEventListener("change", applyFilters));
+      fFunding.forEach(cb => cb.addEventListener("change", applyFilters));
+      // The button state always updates; re-querying only matters once 2+ sources
+      // are picked, since with one source any/all are the same filter.
+      fFundingMode.forEach(b => b.addEventListener("click", () => {
+        if (b.classList.contains("is-active")) return;
+        setFundMode(b.dataset.mode);
+        if (fFunding.filter(cb => cb.checked).length > 1) applyFilters();
+      }));
       document.getElementById("resetBtn").addEventListener("click", () => {
-        [fYear, fStatus, fFunding, fDevType, fDistrict, fNcod].forEach(s => (s.value = ""));
+        [fYear, fStatus, fDevType, fDistrict, fNcod].forEach(s => (s.value = ""));
         fAmi.forEach(cb => (cb.checked = false));
-        loanMinR.value = 0; loanMaxR.value = LOAN_MAX; updateLoanUI();
+        fFunding.forEach(cb => (cb.checked = false));
+        setFundMode("any");
         unitMinR.value = 0; unitMaxR.value = UNIT_MAX; updateUnitUI();
         applyFilters();
       });
@@ -1110,6 +1431,27 @@
        * =================================================================== */
       Chart.defaults.font.family = "Calibri, 'Segoe UI', sans-serif";
       Chart.defaults.color = BRAND.bodyText;
+
+      /* Clicking a legend key toggles that series out of the chart, which is not
+       * discoverable on sight. Set hover text + a pointer cursor on the legend of
+       * every chart that shows one. Applied as a Chart.js default so it covers
+       * charts added later too; charts built with legend.display:false never fire
+       * these. The title is set on the canvas, so it is cleared again on leave —
+       * otherwise it would linger while hovering the plotted data.              */
+      const legendCanvas = (e, legend) =>
+        (legend && legend.chart && legend.chart.canvas) || (e && e.native && e.native.target) || null;
+      Chart.defaults.plugins.legend.onHover = (e, item, legend) => {
+        const c = legendCanvas(e, legend);
+        if (!c) return;
+        c.style.cursor = "pointer";
+        c.title = "Select to filter";
+      };
+      Chart.defaults.plugins.legend.onLeave = (e, item, legend) => {
+        const c = legendCanvas(e, legend);
+        if (!c) return;
+        c.style.cursor = "";
+        c.removeAttribute("title");
+      };
       const SF = SUMMARY_TABLE.fields, CATS = SUMMARY_TABLE.categories;
 
       const sumUrl = `${SUMMARY_TABLE.url}/query?where=1%3D1&outFields=*&orderByFields=${SF.endYear},${SF.quarter}&returnGeometry=false&f=json`;
@@ -1124,9 +1466,11 @@
 
       const sumCat = (field) => yearRows.reduce((s, r) => s + num(r[field]), 0);
       const totalAll = yearRows.reduce((s, r) => s + num(r[SF.total]), 0);
-      const kpis = [["Total completed", totalAll], ...CATS.map(c => [c.label, sumCat(c.field)])];
-      document.getElementById("kpis").innerHTML = kpis.map(([lbl, n]) =>
-        `<div class="kpi"><div class="num">${n.toLocaleString()}</div><div class="lbl">${lbl}</div></div>`).join("");
+      /* Only "Other housing impact" carries a note (a methodology-change caveat);
+       * every other tile's `note` is undefined and gets no title attribute.      */
+      const kpis = [["Total completed", totalAll, null], ...CATS.map(c => [c.label, sumCat(c.field), c.note || null])];
+      document.getElementById("kpis").innerHTML = kpis.map(([lbl, n, note]) =>
+        `<div class="kpi"${note ? ` title="${note.replace(/"/g, "&quot;")}"` : ""}><div class="num">${n.toLocaleString()}</div><div class="lbl">${lbl}</div></div>`).join("");
 
       // External replaces this with fixed approved copy; Internal keeps the
       // dynamic version that reports the live Date_updated from the source table.
@@ -1161,10 +1505,6 @@
         const bondJson = await (await fetch(bondUrl)).json();
         const bondRows = bondJson.features.map(f => f.attributes);
 
-        // Years (rows) and categories (columns)
-        const years = Array.from(new Set(bondRows.map(r => r.End_Year).filter(v => v !== null))).sort((a, b) => a - b);
-        const yearLabels = years.map(y => 'FY' + String(y).slice(2));
-
         // Allowed categories and normalization / mapping helper to avoid "Not specified" and to normalize variants
         const ALLOWED_CATS = ["Home Repair","Public Private Partnerships","LIHTC Gap Financing","Site Acquisition","Homebuyer Assistance"];
         const normalize = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -1181,44 +1521,8 @@
         // derive categories present in the data but limited to the allowed list, in the specified order
         const categories = ALLOWED_CATS.filter(ac => bondRows.some(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === ac));
 
-        // Header: first row has category groupings (each spans 3 cols for Units / Funds available / Funds committed)
-        const headerTop = `<thead><tr><th rowspan="2">Fiscal year</th>${categories.map(c => `<th colspan="3">${c}</th>`).join('')}<th colspan="3">Totals</th></tr>`;
-        const headerBottom = `<tr>${categories.map(() => `<th>Units</th><th>Funds available</th><th>Funds committed</th>`).join('')}<th>Units</th><th>Funds available</th><th>Funds committed</th></tr></thead>`;
-
-        let rowsHtml = '<tbody>';
-        years.forEach((y, yi) => {
-          let row = `<tr><td>${yearLabels[yi]}</td>`;
-          let yearUnitsTotal = 0, yearFundsAvailableTotal = 0, yearFundsCommittedTotal = 0;
-          categories.forEach(cat => {
-            const matches = bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === cat && r.End_Year === y);
-            const units = matches.reduce((s, r) => s + (Number(r.Total_Units) || 0), 0);
-            const fundsAvailable = matches.reduce((s, r) => s + (Number(r.Funds_Available) || 0), 0);
-            const fundsCommitted = matches.reduce((s, r) => s + (Number(r.Funds_Committed) || 0), 0);
-            yearUnitsTotal += units; yearFundsAvailableTotal += fundsAvailable; yearFundsCommittedTotal += fundsCommitted;
-            row += `<td>${units.toLocaleString()}</td><td>$${fundsAvailable.toLocaleString()}</td><td>$${fundsCommitted.toLocaleString()}</td>`;
-          });
-          row += `<td class="total-col">${yearUnitsTotal.toLocaleString()}</td><td class="total-col">$${yearFundsAvailableTotal.toLocaleString()}</td><td class="total-col">$${yearFundsCommittedTotal.toLocaleString()}</td></tr>`;
-          rowsHtml += row;
-        });
-
-        // Grand totals row (all years)
-        const grandUnits = bondRows.reduce((s, r) => s + (Number(r.Total_Units) || 0), 0);
         const grandFundsAvailable = bondRows.reduce((s, r) => s + (Number(r.Funds_Available) || 0), 0);
         const grandFundsCommitted = bondRows.reduce((s, r) => s + (Number(r.Funds_Committed) || 0), 0);
-
-        rowsHtml += `<tr class="total-row"><td>Total (all years)</td>`;
-        // For grand totals per category across all years
-        categories.forEach(cat => {
-          const matches = bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === cat);
-          const units = matches.reduce((s, r) => s + (Number(r.Total_Units) || 0), 0);
-          const fundsAvailable = matches.reduce((s, r) => s + (Number(r.Funds_Available) || 0), 0);
-          const fundsCommitted = matches.reduce((s, r) => s + (Number(r.Funds_Committed) || 0), 0);
-          rowsHtml += `<td>${units.toLocaleString()}</td><td>$${fundsAvailable.toLocaleString()}</td><td>$${fundsCommitted.toLocaleString()}</td>`;
-        });
-        rowsHtml += `<td class="total-col">${grandUnits.toLocaleString()}</td><td class="total-col">$${grandFundsAvailable.toLocaleString()}</td><td class="total-col">$${grandFundsCommitted.toLocaleString()}</td></tr>`;
-
-        rowsHtml += '</tbody>';
-        document.getElementById('bond2020Table').innerHTML = headerTop + headerBottom + rowsHtml;
 
         /* Funding meter: total committed vs. available (mirrors the removed 5,700 goal gauge) */
         const bondPctCommitted = grandFundsAvailable > 0 ? (grandFundsCommitted / grandFundsAvailable * 100) : 0;
@@ -1244,61 +1548,13 @@
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
         });
 
-        /* -------------------------- Build visualizations ------------------------- */
-        // Prepare matrices
-        const catList = categories; // preserved from above
-        const yearList = years;
-        const unitsMat = yearList.map(y => catList.map(c => {
-          return bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === c && r.End_Year === y)
-                         .reduce((s, r) => s + (Number(r.Total_Units) || 0), 0);
-        }));
-        const fundsAvailableMat = yearList.map(y => catList.map(c => {
-          return bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === c && r.End_Year === y)
-                         .reduce((s, r) => s + (Number(r.Funds_Available) || 0), 0);
-        }));
-        const fundsCommittedMat = yearList.map(y => catList.map(c => {
-          return bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === c && r.End_Year === y)
-                         .reduce((s, r) => s + (Number(r.Funds_Committed) || 0), 0);
-        }));
-
-        // Color palette (repeat if needed)
-        const palette = [BRAND.raleighGreen, BRAND.leafGreen, BRAND.chartreuse, BRAND.teal, BRAND.midGreen, BRAND.amber, BRAND.rust, BRAND.navy];
-        const catColors = catList.map((c, i) => palette[i % palette.length]);
-
-        // 1) Stacked bar (units)
-        const stackedDatasets = catList.map((c, i) => ({ label: c, data: yearList.map((y, yi) => unitsMat[yi][i]), backgroundColor: catColors[i] }));
-        if (window.bondStackedChart) window.bondStackedChart.destroy();
-        window.bondStackedChart = new Chart(document.getElementById('bondStackedUnits'), {
-          type: 'bar', data: { labels: yearList.map(y => 'FY' + String(y).slice(2)), datasets: stackedDatasets },
-          options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Units' } } }, plugins: { legend: { position: 'bottom' } } },
-        });
-
-        // 2) (removed) Grouped bars, small multiples, and heatmap — not used in this configuration
-
-        // 5) Pivot table: years rows, categories columns for chosen metric
-        function renderPivot(metricField) {
-          const header = `<thead><tr><th>Fiscal year</th>${catList.map(c => `<th>${c}</th>`).join('')}<th>Total</th></tr></thead>`;
-          let body = '<tbody>';
-          yearList.forEach((y, yi) => {
-            let row = `<tr><td>FY${String(y).slice(2)}</td>`;
-            let yearTotal = 0;
-            catList.forEach((c, ci) => {
-              const val = bondRows.filter(r => mapCategory(r.Bond_2020_Category || r.Funding_Source) === c && r.End_Year === y)
-                                  .reduce((s, r) => s + (Number(r[metricField]) || 0), 0);
-              yearTotal += val;
-              row += `<td>${metricField === 'Total_Units' ? val.toLocaleString() : '$' + val.toLocaleString()}</td>`;
-            });
-            row += `<td class="total-col">${metricField === 'Total_Units' ? yearTotal.toLocaleString() : '$' + yearTotal.toLocaleString()}</td></tr>`;
-            body += row;
-          });
-          body += '</tbody>';
-          document.getElementById('bondPivotTable').innerHTML = header + body;
-        }
-        const pivotSel = document.getElementById('pivotMetric'); pivotSel.addEventListener('change', (e) => renderPivot(e.target.value));
-        renderPivot('Total_Units');
+        /* Removed 2026-08-17: the stacked units-by-fiscal-year chart and the
+         * Bond Tracker Pivot (plus the per-year/per-category matrices that fed
+         * only those two). The gauge and category pie above are what remain
+         * from this data pull.                                                */
 
       } catch (e) {
-        document.getElementById('bond2020Table').innerHTML = '<tbody><tr><td>Unable to load 2020 Bond totals.</td></tr></tbody>';
+        document.getElementById('bondFundingKpis').innerHTML = '<div class="note">Unable to load 2020 Bond totals.</div>';
         console.error('Bond table load error', e);
       }
 
@@ -1365,7 +1621,15 @@
       try {
         const devUrl = 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/f_2020_Bond_Tracker_Housing_Development_2020/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=false&f=json';
         const devJson = await (await fetch(devUrl)).json();
-        const devRows = devJson.features.map(f => f.attributes || {});
+        /* The source table carries a spreadsheet-style totals row: no project, no
+         * status, no category, but a Total_Units equal to the sum of every real
+         * row — which double-counted the headline unit figure. Drop any row that
+         * names neither a project nor a status, so it stays excluded even if a
+         * similar row reappears on a future refresh.                            */
+        const devRowsRaw = devJson.features.map(f => f.attributes || {});
+        const isRealProject = (r) => String(r.Project || '').trim() !== '' || String(r.Status || '').trim() !== '';
+        const devRows = devRowsRaw.filter(isRealProject);
+        const droppedTotalsRows = devRowsRaw.length - devRows.length;
 
         // local color palette for these charts
         const palette = [BRAND.raleighGreen, BRAND.leafGreen, BRAND.chartreuse, BRAND.teal, BRAND.midGreen, BRAND.amber, BRAND.rust, BRAND.navy];
@@ -1395,117 +1659,164 @@
         // Collapse detailed construction statuses down to Complete / Pipeline.
         const collapseStatus = s => (String(s || '').trim().toLowerCase() === 'complete' ? 'Complete' : 'Pipeline');
 
-        // summary KPIs
-        const totalProjects = devRows.length;
-        const totalUnits = devRows.reduce((s, r) => s + (Number(pick(r, unitFields)) || 0), 0);
-        const totalFunds = devRows.reduce((s, r) => s + (Number(pick(r, fundsFields)) || 0), 0);
-        document.getElementById('bondDevKpis').innerHTML = `
-          <div class="kpi"><div class="num">${totalProjects.toLocaleString()}</div><div class="lbl">Total Projects</div></div>
-          <div class="kpi"><div class="num">${totalUnits.toLocaleString()}</div><div class="lbl">Total Units</div></div>
-          <div class="kpi"><div class="num">${fmtMoney(totalFunds)}</div><div class="lbl">Funds Committed</div></div>`;
+        /* The "units by status" pie was removed 2026-08-17. collapseStatus is
+         * still used below -- the section-level Complete/Pipeline filter it
+         * powers was kept. */
 
-        // Units by category (normalized onto the 5 canonical 2020 Bond categories)
-        const byCat = {};
-        devRows.forEach(r => {
-          const c = mapCategoryDev(pick(r, catFields));
-          const u = Number(pick(r, unitFields)) || 0;
-          byCat[c] = (byCat[c] || 0) + u;
-        });
-        const catLabels = ALLOWED_CATS_DEV.filter(c => byCat[c] > 0).concat(byCat['Other'] > 0 ? ['Other'] : []);
-        const catData = catLabels.map(l => byCat[l]);
-        if (window.bondDevCatChart) window.bondDevCatChart.destroy();
-        window.bondDevCatChart = new Chart(document.getElementById('bondDevByCategory'), {
-          type: 'pie', data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catLabels.map((_,i) => palette[i % palette.length]) }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
-        });
+        const allRows = devRows.slice().sort((a,b) => (''+pick(b, fyFundedFields)).localeCompare(''+pick(a, fyFundedFields)));
 
-        // Units by status (collapsed to Complete / Pipeline)
-        const byStatus = {};
-        devRows.forEach(r => {
-          const s = collapseStatus(pick(r, statusFields));
-          const u = Number(pick(r, unitFields)) || 0;
-          byStatus[s] = (byStatus[s] || 0) + u;
-        });
-        const statusLabels = Object.keys(byStatus).sort();
-        const statusData = statusLabels.map(l => byStatus[l]);
-        if (window.bondDevStatusChart) window.bondDevStatusChart.destroy();
-        window.bondDevStatusChart = new Chart(document.getElementById('bondDevByStatus'), {
-          type: 'pie', data: { labels: statusLabels, datasets: [{ data: statusData, backgroundColor: statusLabels.map((_,i) => palette[(i+2) % palette.length]) }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
-        });
+        /* -------- units by category: read the published totals table ----------
+         * Grosvenor Gardens is funded twice, once under Site Acquisition
+         * ($2.0M) and once under LIHTC Gap ($1.2M), and its 62 units are
+         * deliberately counted only ONCE, under Site Acquisition. That rule is
+         * applied in the Bond 2020 Totals table. Summing the project rows here
+         * instead double-counted them, so this chart showed 2,387 units while
+         * the totals table showed 2,325.
+         *
+         * HN records the rule only as note text on their own sheet ("Grosvenor
+         * Gardens units are not counted here"), which no query or chart can
+         * read, so the totals table is the one place it actually takes effect.
+         *
+         * Consequence, by design: this chart reflects ALL projects and does not
+         * follow the Complete/Pipeline filter. That filter still drives the
+         * KPIs and the project table below. If the totals table cannot be
+         * reached we fall back to summing the project rows, which is the old
+         * behaviour and will double-count Grosvenor, so the note says which
+         * source produced the figures.                                        */
+        const HD_CATS = ["Public Private Partnerships", "LIHTC Gap Financing", "Site Acquisition"];
+        let devUnitsByCat = null;
+        try {
+          const totUnitsUrl = 'https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/f_2020_Bond_Tracker_Bond_2020_Totals/FeatureServer/0/query?where=1%3D1&outFields=Bond_2020_Category,Total_Units&returnGeometry=false&f=json';
+          const totUnitsJson = await (await fetch(totUnitsUrl)).json();
+          const acc = {};
+          (totUnitsJson.features || []).forEach(f => {
+            const a = f.attributes || {};
+            const c = mapCategoryDev(a.Bond_2020_Category);
+            if (HD_CATS.indexOf(c) === -1) return;      // skip Home Repair / Homebuyer Assistance
+            acc[c] = (acc[c] || 0) + (Number(a.Total_Units) || 0);
+          });
+          if (Object.keys(acc).length) devUnitsByCat = acc;
+        } catch (e) {
+          console.warn('Bond totals unit fetch failed; falling back to project rows', e);
+        }
 
-        // Cumulative units by fund year
-        const byYearSum = {};
-        devRows.forEach(r => {
-          const y = (pick(r, fundYearFields) || '').toString().trim();
-          if (y) {
-            const u = Number(pick(r, unitFields)) || 0;
-            byYearSum[y] = (byYearSum[y] || 0) + u;
+        /* Everything below responds to the section-level status filter. */
+        function renderBondDev(statusFilter) {
+          const rows = statusFilter ? devRows.filter(r => collapseStatus(pick(r, statusFields)) === statusFilter) : devRows;
+
+          // summary KPIs — Units tile removed 2026-08-17; project count and
+          // funds committed only.
+          const totalProjects = rows.length;
+          const totalFunds = rows.reduce((s, r) => s + (Number(pick(r, fundsFields)) || 0), 0);
+          document.getElementById('bondDevKpis').innerHTML = `
+            <div class="kpi"><div class="num">${totalProjects.toLocaleString()}</div><div class="lbl">Projects</div></div>
+            <div class="kpi"><div class="num">${fmtMoney(totalFunds)}</div><div class="lbl">Funds Committed</div></div>`;
+
+          const scopeLabel = statusFilter === 'Complete' ? 'complete only'
+            : statusFilter === 'Pipeline' ? 'pipeline only' : 'complete & pipeline';
+          document.getElementById('bondDevScope').textContent = scopeLabel;
+          document.getElementById('bondDevCaveat').innerHTML =
+            `Showing <strong>${scopeLabel}</strong> — ${totalProjects} of ${devRows.length} project(s) in the table.`
+            + (droppedTotalsRows ? ` A totals row carrying no project or status was excluded from the source table.` : '');
+
+          // Units by category. Preferred source is the published totals table,
+          // which already applies the Grosvenor single-count rule; see the note
+          // above. Falls back to the project rows only if that fetch failed.
+          const byCat = {};
+          if (devUnitsByCat) {
+            Object.keys(devUnitsByCat).forEach(k => { byCat[k] = devUnitsByCat[k]; });
+          } else {
+            rows.forEach(r => {
+              const c = mapCategoryDev(pick(r, catFields));
+              const u = Number(pick(r, unitFields)) || 0;
+              byCat[c] = (byCat[c] || 0) + u;
+            });
           }
-        });
-        const yearLabels = Object.keys(byYearSum).sort((a, b) => {
-          const aYear = parseInt(a) || 0;
-          const bYear = parseInt(b) || 0;
-          return aYear - bYear;
-        });
-        let cumulative = 0;
-        const cumulativeData = yearLabels.map(y => {
-          cumulative += byYearSum[y];
-          return cumulative;
-        });
-        if (window.bondDevCumulativeChart) window.bondDevCumulativeChart.destroy();
-        window.bondDevCumulativeChart = new Chart(document.getElementById('bondDevCumulative'), {
-          type: 'line', data: { labels: yearLabels, datasets: [{ label: 'Cumulative Units', data: cumulativeData, backgroundColor: 'transparent', borderColor: BRAND.raleighGreen, borderWidth: 2, pointRadius: 4, pointBackgroundColor: BRAND.raleighGreen, tension: 0.3, fill: false }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Fund Year' } }, y: { beginAtZero: true, title: { display: true, text: 'Units' } } } },
-        });
+          const unitsTotal = Object.keys(byCat).reduce((s, k) => s + byCat[k], 0);
+          const unitsNoteEl = document.getElementById('bondDevUnitsNote');
+          if (unitsNoteEl) {
+            unitsNoteEl.textContent = devUnitsByCat
+              ? `${unitsTotal.toLocaleString()} units across all development projects, from the 2020 Bond Tracker totals table. Grosvenor Gardens is funded under two categories and its 62 units are counted once, under Site Acquisition. This chart covers all projects and does not follow the status filter above.`
+              : `${unitsTotal.toLocaleString()} units, summed from the project rows because the totals table could not be reached. Grosvenor Gardens' 62 units are counted twice in this fallback.`;
+          }
+          const catLabels = ALLOWED_CATS_DEV.filter(c => byCat[c] > 0).concat(byCat['Other'] > 0 ? ['Other'] : []);
+          const catData = catLabels.map(l => byCat[l]);
+          if (window.bondDevCatChart) window.bondDevCatChart.destroy();
+          window.bondDevCatChart = new Chart(document.getElementById('bondDevByCategory'), {
+            type: 'pie', data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catLabels.map((_,i) => palette[i % palette.length]) }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
+          });
+
+          // The cumulative-units-by-fund-year chart was removed 2026-08-17.
+
+          renderBondDevList(statusFilter);
+        }
 
         // Scrollable project listing — exclude monetary/funding amount fields
-        const allRows = devRows.slice().sort((a,b) => (''+pick(b, fyFundedFields)).localeCompare(''+pick(a, fyFundedFields)));
         function renderBondDevList(statusFilter) {
           const rows = statusFilter ? allRows.filter(r => collapseStatus(pick(r, statusFields)) === statusFilter) : allRows;
-          let tbl = `<thead><tr><th>Project</th><th>Category</th><th>Fiscal Year Funded</th><th>Status</th><th>Total Units</th></tr></thead><tbody>`;
-          let unitTotal = 0;
+          // Total Units column removed 2026-08-17.
+          let tbl = `<thead><tr><th>Project</th><th>Category</th><th>Fiscal Year Funded</th><th>Status</th></tr></thead><tbody>`;
           rows.forEach(r => {
             const proj = pick(r, nameFields) || '—';
             const bc = mapCategoryDev(pick(r, catFields));
             const fy = pick(r, fyFundedFields) || '';
             const st = collapseStatus(pick(r, statusFields));
-            const u = Number(pick(r, unitFields)) || 0;
-            unitTotal += u;
-            tbl += `<tr><td>${proj}</td><td>${bc}</td><td>${fy}</td><td>${st}</td><td>${u.toLocaleString()}</td></tr>`;
+            tbl += `<tr><td>${proj}</td><td>${bc}</td><td>${fy}</td><td>${st}</td></tr>`;
           });
-          tbl += `<tr class="total-row"><td colspan="4">Total (${rows.length.toLocaleString()} project${rows.length === 1 ? '' : 's'})</td><td class="total-col">${unitTotal.toLocaleString()}</td></tr>`;
+          tbl += `<tr class="total-row"><td colspan="4">Total (${rows.length.toLocaleString()} project${rows.length === 1 ? '' : 's'})</td></tr>`;
           tbl += '</tbody>';
           document.getElementById('bondDevList').innerHTML = tbl;
         }
-        document.getElementById('bondDevStatusFilter').addEventListener('change', (e) => renderBondDevList(e.target.value));
-        renderBondDevList('');
+        document.getElementById('bondStatusFilter').addEventListener('change', (e) => renderBondDev(e.target.value));
+        renderBondDev('');
 
       } catch (e) { console.error('Bond development list load error', e); document.getElementById('bondDevKpis').innerHTML = '<div class="note">Could not load 2020 Bond development projects.</div>'; }
 
       /* =================================================================== *
        *  DISTRICT PANEL — aggregated from the mapped point layers (geometry)
+       *  Cut from External per 8.6.26 leadership call -- its HTML (#geography
+       *  Section) is already removed above; this skips the layer queries and
+       *  DOM writes that section would otherwise need, entirely, on External.
        * =================================================================== */
+      if (MODE !== "external") {
+      /* `summaryFields` are the matching columns in the aggregate tracker, used by
+       * the reconciliation dialog to line the mapped counts up against the
+       * reported source of truth.                                               */
       const PROGRAMS = [
-        { id: "housing_development", label: "Development",          F: DEV_FIELDS,   color: BRAND.raleighGreen },
-        { id: "other_housing_impact",label: "Other housing impact", F: OTHER_FIELDS, color: BRAND.amber },
-        { id: "homeowner_rehabs",    label: "Homeowner rehab",      F: REHAB_FIELDS, color: BRAND.teal },
-        { id: "homebuyer_assistance",label: "Homebuyer assistance", F: HBA_FIELDS,   color: BRAND.navy },
+        { id: "housing_development", label: "Development",          F: DEV_FIELDS,   color: BRAND.raleighGreen,
+          summaryFields: ["Housing_Development_New_Construction", "Housing_Development_Preservation"] },
+        { id: "other_housing_impact",label: "Other housing impact", F: OTHER_FIELDS, color: BRAND.amber,
+          summaryFields: ["Other_Housing_Impact"] },
+        { id: "homeowner_rehabs",    label: "Homeowner rehab",      F: REHAB_FIELDS, color: BRAND.teal,
+          summaryFields: ["Homeowner_Rehabs"] },
+        { id: "homebuyer_assistance",label: "Homebuyer assistance", F: HBA_FIELDS,   color: BRAND.navy,
+          summaryFields: ["Homebuyer_Assistance"] },
       ];
       const records = [];
-      const untagged = {};
+      const untagged = {};        // records with no council district (excluded below)
+      const untaggedUnits = {};   // units those excluded records carried
+      const pipelineUnits = {};   // of the units counted, how many are not yet complete
+      const blankUnitRecords = {};// records with no Total_Units, counted as 1 each
       for (const p of PROGRAMS) {
-        untagged[p.id] = 0;
+        untagged[p.id] = 0; untaggedUnits[p.id] = 0; pipelineUnits[p.id] = 0; blankUnitRecords[p.id] = 0;
         const layer = housing[p.id];
         const q = layer.createQuery();
         q.where = "1=1"; q.returnGeometry = false;
-        q.outFields = [p.F.council, p.F.ncod, p.F.totalUnits, p.F.fiscalYear];
+        q.outFields = [p.F.council, p.F.ncod, p.F.totalUnits, p.F.fiscalYear, p.F.projectStatus].filter(Boolean);
         const res = await layer.queryFeatures(q);
         res.features.forEach(f => {
           const a = f.attributes;
           const d = clean(a[p.F.council]);
-          if (d) records.push({ program: p.id, district: d, ncod: clean(a[p.F.ncod]) || "", fiscalYear: clean(a[p.F.fiscalYear]), units: num(a[p.F.totalUnits]) || 1 });
-          else untagged[p.id]++;
+          const rawUnits = num(a[p.F.totalUnits]);
+          const units = rawUnits || 1;
+          if (!rawUnits) blankUnitRecords[p.id]++;
+          if (d) {
+            records.push({ program: p.id, district: d, ncod: clean(a[p.F.ncod]) || "", fiscalYear: clean(a[p.F.fiscalYear]), units });
+            if (p.F.projectStatus && clean(a[p.F.projectStatus]) !== "Complete") pipelineUnits[p.id] += units;
+          } else {
+            untagged[p.id]++; untaggedUnits[p.id] += units;
+          }
         });
       }
       const distSel = document.getElementById("distSel");
@@ -1523,7 +1834,11 @@
       function renderGeography(dist, ncod) {
         const rows2 = records.filter(r => (!dist || r.district === dist) && (!ncod || r.ncod === ncod));
         const unitsOf = (id) => rows2.filter(r => r.program === id).reduce((s, r) => s + r.units, 0);
-        const kpi = [["Total units (mapped)", rows2.reduce((s, r) => s + r.units, 0)], ...PROGRAMS.map(p => [p.label, unitsOf(p.id)])];
+        /* Every tile is mapped-point derived and includes pipeline, so each is
+         * labelled "(mapped)" — the tiles are read on their own, away from the
+         * caveat above, and were being mistaken for the citywide totals.       */
+        const kpi = [["Total units (mapped)", rows2.reduce((s, r) => s + r.units, 0)],
+                     ...PROGRAMS.map(p => [`${p.label} (mapped)`, unitsOf(p.id)])];
         document.getElementById("distKpis").innerHTML = kpi.map(([l, v]) =>
           `<div class="kpi"><div class="num">${v.toLocaleString()}</div><div class="lbl">${l}</div></div>`).join("");
 
@@ -1546,16 +1861,105 @@
         });
       }
 
-      /* keep the geography selectors + URL in sync (single page) */
+      /* ---- reconciliation dialog ------------------------------------------ *
+       * Quantifies, per program, why the mapped tiles differ from the reported
+       * citywide totals. Everything is derived from data already on the page:
+       * `combined` holds the tracker's year-end rows, `records`/`untaggedUnits`/
+       * `pipelineUnits` come from the point layers queried above.
+       *
+       * The identity being shown is:
+       *   completed & mapped = mapped shown − pipeline included
+       *   not in map         = reported − completed & mapped
+       * "Not in map" is a residual, so it absorbs every remaining cause at once
+       * (fiscal years the detail sheets don't cover, records that never
+       * geocoded, de-identified rows dropped at publish). It is labelled as a
+       * remainder rather than pretending each of those is measured separately. */
+      (function buildReconciliation() {
+        const reportedOf = (p) => combined.reduce(
+          (s, r) => s + p.summaryFields.reduce((t, f) => t + (num(r[f]) || 0), 0), 0);
+        const unitsMapped = (id) => records.filter(r => r.program === id).reduce((s, r) => s + r.units, 0);
+        const fmtDelta = (v) => v === 0 ? "0"
+          : `<span class="${v > 0 ? "recon-pos" : "recon-neg"}">${v > 0 ? "+" : "−"}${Math.abs(v).toLocaleString()}</span>`;
+        /* The remainder can go negative — that means MORE units are mapped as
+         * complete than the tracker reports, which is a discrepancy rather than
+         * a coverage gap, so it is flagged instead of shown as a bare minus.   */
+        const fmtRemainder = (v) => v < 0
+          ? `<span class="recon-neg">−${Math.abs(v).toLocaleString()} ⚠</span>`
+          : v.toLocaleString();
+
+        let body = "", anyBlank = 0, anyUntagged = 0;
+        for (const p of PROGRAMS) {
+          const reported = reportedOf(p);
+          const mapped = unitsMapped(p.id);
+          const pipe = pipelineUnits[p.id];
+          const completedMapped = mapped - pipe;
+          const notInMap = reported - completedMapped;
+          anyBlank += blankUnitRecords[p.id];
+          anyUntagged += untagged[p.id];
+          body += `<tr>
+            <td>${p.label}</td>
+            <td>${reported.toLocaleString()}</td>
+            <td>${mapped.toLocaleString()}</td>
+            <td>${fmtDelta(mapped - reported)}</td>
+            <td>${pipe.toLocaleString()}</td>
+            <td>${completedMapped.toLocaleString()}</td>
+            <td>${fmtRemainder(notInMap)}</td>
+            <td>${untagged[p.id].toLocaleString()} (${untaggedUnits[p.id].toLocaleString()})</td>
+          </tr>`;
+        }
+
+        document.getElementById("reconTableWrap").innerHTML = `
+          <table class="recon-table">
+            <thead><tr>
+              <th>Program</th>
+              <th>Reported (tracker)</th>
+              <th>Mapped (shown here)</th>
+              <th>Difference</th>
+              <th>of which pipeline</th>
+              <th>Completed &amp; mapped</th>
+              <th>Reported, not on the map</th>
+              <th>Excluded: no district<br><span style="font-weight:400;">records (units)</span></th>
+            </tr></thead>
+            <tbody>${body}</tbody>
+          </table>`;
+
+        const notes = [
+          `<strong>Reported (tracker)</strong> is every fiscal year the summary table reports as complete. <strong>Mapped</strong> counts points in the layers, completed and pipeline together — which is why Development reads higher than reported while the resident-level programs read lower.`,
+          `<strong>Excluded: no district</strong> are points whose Council District is blank or "None", so they fall out of a panel organised by district. ${anyUntagged.toLocaleString()} record(s) in total.`,
+          `<strong>Reported, not on the map</strong> is the remainder once pipeline is removed. It covers fiscal years the detail sheets do not reach back to, records that could not be geocoded, and rows dropped when the public de-identified layers were built.`,
+          `A <span class="recon-neg">negative remainder (⚠)</span> is the opposite problem: the map holds <em>more</em> completed units than the tracker reports for that program. That is a genuine discrepancy between the detail sheet and the summary table, not a coverage gap, and is worth reconciling at the source.`,
+        ];
+        if (anyBlank) notes.push(`${anyBlank.toLocaleString()} record(s) carry no unit count and are counted as 1 unit each.`);
+        document.getElementById("reconNotes").innerHTML = notes.join("<br><br>");
+      })();
+
+      (function wireReconciliationDialog() {
+        const overlay = document.getElementById("reconOverlay");
+        /* The trigger button is currently commented out in the markup, so bail
+         * rather than throwing on a missing element. Restoring the button is all
+         * that is needed to bring the dialog back.                             */
+        const openBtn = document.getElementById("reconOpen");
+        if (!openBtn) return;
+        const open = () => overlay.classList.add("open");
+        const close = () => overlay.classList.remove("open");
+        openBtn.addEventListener("click", open);
+        document.getElementById("reconClose").addEventListener("click", close);
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+      })();
+
+      /* keep the geography selectors + URL in sync (single page) --
+       * installs the real implementation into the always-defined
+       * syncGeographyImpl declared up near applyFilters().                    */
       let syncing = false;
-      function syncGeography(distVal, ncodVal) {
+      syncGeographyImpl = function (distVal, ncodVal) {
         if (syncing) return; syncing = true;
         if (distValues.includes(distVal) || distVal === "") distSel.value = distVal;
         if (ncodValues.includes(ncodVal) || ncodVal === "") ncodSel.value = ncodVal;
         if ([...fDistrict.options].some(o => o.value === distVal) || distVal === "") fDistrict.value = distVal;
         renderGeography(distSel.value, ncodSel.value);
         syncing = false;
-      }
+      };
       distSel.addEventListener("change", () => {
         renderGeography(distSel.value, ncodSel.value);
         if ([...fDistrict.options].some(o => o.value === distSel.value) || distSel.value === "") {
@@ -1570,6 +1974,7 @@
       const urlDist = new URLSearchParams(location.search).get("district") || "";
       if (urlDist) { if ([...fDistrict.options].some(o => o.value === urlDist)) fDistrict.value = urlDist; distSel.value = distValues.includes(urlDist) ? urlDist : ""; }
       renderGeography(distSel.value, ncodSel.value);
+      } // end: MODE !== "external" (City housing by geography)
       await applyFilters();
 
       /* ===== AFFORDABILITY & FUNDING: Units by Source + Funding by Year ===== */
@@ -1580,7 +1985,7 @@
           "homeowner_rehabs": "Home Repair",
           "homebuyer_assistance": "Homebuyer Assistance"
         };
-        let fundingChart, fundingYearChart, fundingAMIChart;
+        let fundingYearChart;
 
         function initProjectTypeDropdown() {
           fundingProjectTypeSel.innerHTML = '<option value="">All types</option>' +
@@ -1588,20 +1993,7 @@
         }
 
         async function renderFundingCharts(selectedLayerId) {
-          const bySource = {};
           const byYear = {};
-          const byAMI = {
-            "≤20% AMI": 0,
-            "30% AMI": 0,
-            "40% AMI": 0,
-            "50% AMI": 0,
-            "60% AMI": 0,
-            "70% AMI": 0,
-            "80% AMI": 0,
-            "Unrestricted": 0,
-            "Homeownership": 0
-          };
-          const missingSource = {};   // records per layer with no Funding_Source
           const missingUnits = {};    // records per layer with no Total_Units (counted as 1 in the pie chart)
           console.log("Rendering funding charts - layer:", selectedLayerId);
 
@@ -1616,94 +2008,46 @@
 
             const F = layerId === "housing_development" ? DEV_FIELDS : (layerId === "homeowner_rehabs" ? REHAB_FIELDS : HBA_FIELDS);
 
-            // DEV_FIELDS.amiBands is an array of [field, label, color] tuples;
-            // REHAB_FIELDS/HBA_FIELDS.amiBands is a plain array of field-name strings.
-            const amiFieldNames = F.amiBands
-              ? F.amiBands.map(band => Array.isArray(band) ? band[0] : band)
-              : null;
-
             const q = layer.createQuery();
             q.where = "1=1";
             q.returnGeometry = false;
             q.outFields = [F.fundingSource, F.totalUnits, F.loanAmount, F.fiscalYear];
-            if (amiFieldNames) q.outFields.push(...amiFieldNames);
-            if (F.unrestricted) q.outFields.push(F.unrestricted);
-            if (F.homeownership) q.outFields.push(F.homeownership);
 
             const res = await layer.queryFeatures(q);
             console.log(`Features from ${layerId}:`, res.features.length);
 
-            missingSource[layerId] = 0;
             missingUnits[layerId] = 0;
 
             res.features.forEach(f => {
-              const rawSource = clean(f.attributes[F.fundingSource]);
-              if (!rawSource) missingSource[layerId]++;
-              const source = rawSource || "Not specified";
+              /* byYear collapses these buckets into a per-year total, so `source`
+               * is only an intermediate key — it is no longer shown anywhere.   */
+              const source = clean(f.attributes[F.fundingSource]) || "Not specified";
               const rawUnits = num(f.attributes[F.totalUnits]);
               if (!rawUnits) missingUnits[layerId]++;
-              const units = rawUnits || 0;
               const amount = num(f.attributes[F.loanAmount]) || 0;
               const fy = clean(f.attributes[F.fiscalYear]) || "Unknown";
 
-              bySource[source] = (bySource[source] || 0) + units;
-
               if (!byYear[fy]) byYear[fy] = {};
               byYear[fy][source] = (byYear[fy][source] || 0) + amount;
-
-              if (amiFieldNames) {
-                byAMI["≤20% AMI"] += num(f.attributes[amiFieldNames[0]]) || 0;
-                byAMI["30% AMI"] += num(f.attributes[amiFieldNames[1]]) || 0;
-                byAMI["40% AMI"] += num(f.attributes[amiFieldNames[2]]) || 0;
-                byAMI["50% AMI"] += num(f.attributes[amiFieldNames[3]]) || 0;
-                byAMI["60% AMI"] += num(f.attributes[amiFieldNames[4]]) || 0;
-                byAMI["70% AMI"] += num(f.attributes[amiFieldNames[5]]) || 0;
-                byAMI["80% AMI"] += num(f.attributes[amiFieldNames[6]]) || 0;
-              }
-              if (F.unrestricted) byAMI["Unrestricted"] += num(f.attributes[F.unrestricted]) || 0;
-              if (F.homeownership) byAMI["Homeownership"] += num(f.attributes[F.homeownership]) || 0;
             });
           }
 
-          console.log("Aggregated data by source:", bySource);
           console.log("Aggregated data by year:", byYear);
-          console.log("Aggregated data by AMI:", byAMI);
 
           // Data-quality caveat: how many records were missing key fields
-          const sourceGaps = Object.entries(missingSource).filter(([, n]) => n > 0)
-            .map(([id, n]) => `${n} ${FUNDING_LAYERS_MAP[id].toLowerCase()}`).join(", ");
           const unitGaps = Object.entries(missingUnits).filter(([, n]) => n > 0)
             .map(([id, n]) => `${n} ${FUNDING_LAYERS_MAP[id].toLowerCase()}`).join(", ");
           const caveatParts = [];
-          if (sourceGaps) caveatParts.push(`No Funding Source recorded (shown as "Not specified"): ${sourceGaps}.`);
           if (unitGaps) caveatParts.push(`No Total Units recorded (counted as 0, not excluded): ${unitGaps}.`);
           caveatParts.push(`The unit totals below reflect only projects with Total Units recorded — they are not a count of all projects, and will undercount true production wherever Total Units is blank.`);
           document.getElementById("fundingCaveat").innerHTML = caveatParts.join(" ");
 
-          // Render pie chart (units by source)
-          const labels = Object.keys(bySource).sort();
-          const data = labels.map(l => bySource[l]);
-          const colors = [BRAND.raleighGreen, BRAND.leafGreen, BRAND.chartreuse, BRAND.teal, BRAND.midGreen, BRAND.amber, "#99bbff", BRAND.navy];
-
-          if (fundingChart) fundingChart.destroy();
-          fundingChart = new Chart(document.getElementById("fundingBySource"), {
-            type: "pie",
-            data: {
-              labels: labels,
-              datasets: [{
-                data: data,
-                backgroundColor: labels.map((_, i) => colors[i % colors.length])
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom" } }
-            }
-          });
-
           // Render bar chart (total funding by year)
-          const yearLabels = Object.keys(byYear).sort();
+          // FY 2026-2027 has no committed funding recorded yet (0-value bar was
+          // confusing next to real years) -- hidden per leadership call
+          // 2026-07-30, to be added back once Q1 FY27 is reported.
+          const HIDE_FISCAL_YEARS = new Set(["2026-2027"]);
+          const yearLabels = Object.keys(byYear).filter(y => !HIDE_FISCAL_YEARS.has(y)).sort();
           const yearTotals = yearLabels.map(year =>
             Object.values(byYear[year]).reduce((sum, val) => sum + val, 0) / 1000000
           );
@@ -1722,33 +2066,22 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              scales: { y: { beginAtZero: true } },
-              plugins: { legend: { position: "bottom" } }
-            }
-          });
-
-          // Render horizontal bar chart (units by AMI band)
-          const amiLabels = Object.keys(byAMI);
-          const amiData = Object.values(byAMI);
-          const amiColors = [BRAND.navy, BRAND.teal, BRAND.leafGreen, BRAND.chartreuse, BRAND.amber, BRAND.rust, "#99bbff", BRAND.raleighGreen, BRAND.midGreen];
-
-          if (fundingAMIChart) fundingAMIChart.destroy();
-          fundingAMIChart = new Chart(document.getElementById("fundingByAMI"), {
-            type: "bar",
-            data: {
-              labels: amiLabels,
-              datasets: [{
-                label: "Units",
-                data: amiData,
-                backgroundColor: amiColors.slice(0, amiLabels.length)
-              }]
-            },
-            options: {
-              indexAxis: "y",
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: { x: { beginAtZero: true } },
-              plugins: { legend: { display: false } }
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  /* yearTotals are already divided down to $ millions, so bare
+                   * ticks read as "100" with no way to tell $100 from $100M.
+                   * Label the axis and stamp the unit onto every tick.        */
+                  title: { display: true, text: "City funding (US dollars)" },
+                  ticks: { callback: (v) => v === 0 ? "$0" : "$" + (Number.isInteger(v) ? v : Number(v).toFixed(1)) + "M" },
+                },
+              },
+              plugins: {
+                /* One dataset, and the card heading already says what it is. */
+                legend: { display: false },
+                /* Hovering a bar showed just "100" — give the exact dollars. */
+                tooltip: { callbacks: { label: (c) => "Total funding: " + fmtMoney(c.parsed.y * 1e6) } },
+              },
             }
           });
         }
@@ -1802,30 +2135,6 @@
           <div class="kpi"><div class="num">${pctPipeline.toFixed(1)}%</div><div class="lbl">Of all units are in the pipeline</div></div>
           <div class="kpi"><div class="num">${totalUnitsPipeline.toLocaleString()}</div><div class="lbl">Total pipeline units</div></div>
           <div class="kpi"><div class="num">${pipelineRows.length.toLocaleString()}</div><div class="lbl">Pipeline projects</div></div>`;
-
-        // Breakdown of pipeline units by construction status (Pre Construction vs Under Construction)
-        const byConstStatus = {};
-        pipelineRows.forEach(a => {
-          const st = clean(a[F.status]) || "Not specified";
-          const units = num(a[F.totalUnits]) || 0;
-          byConstStatus[st] = (byConstStatus[st] || 0) + units;
-        });
-
-        const statusLabels = Object.keys(byConstStatus).sort();
-        const statusData = statusLabels.map(l => byConstStatus[l]);
-        const statusColors = [BRAND.amber, BRAND.teal, BRAND.rust, BRAND.navy, BRAND.leafGreen];
-
-        new Chart(document.getElementById("pipelineStatusChart"), {
-          type: "doughnut",
-          data: {
-            labels: statusLabels,
-            datasets: [{ data: statusData, backgroundColor: statusLabels.map((_, i) => statusColors[i % statusColors.length]) }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false, cutout: "65%",
-            plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }
-          }
-        });
 
         // Pipeline projects table
         const sortedPipeline = pipelineRows.slice().sort((a, b) => {

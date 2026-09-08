@@ -79,7 +79,8 @@ export const SUMMARY_TABLE = {
     { field: "Housing_Development_Preservation",     label: "Preserved",             color: BRAND.leafGreen },
     { field: "Homeowner_Rehabs",                     label: "Home repair",           color: BRAND.chartreuse },
     { field: "Homebuyer_Assistance",                 label: "Homebuyer assistance",  color: BRAND.teal },
-    { field: "Other_Housing_Impact",                 label: "Other housing impact",  color: BRAND.amber },
+    { field: "Other_Housing_Impact",                 label: "Other housing impact",  color: BRAND.amber,
+      note: "The City previously counted some units from a community program that we no longer track in the new methodology." },
   ],
 };
 
@@ -121,6 +122,27 @@ export const DEV_FIELDS = {
   ],
 };
 
+/* --- City funding sources (map filter) -------------------------------------
+ * One entry per fundable source. `field` is the broken-out amount column and
+ * `values` are the exact Funding_Source text values that mean the same source,
+ * so a record matches if EITHER carries it. A row can be tagged "Multiple" in
+ * Funding_Source, which says nothing on its own — hence "Multiple" is
+ * deliberately absent here; those rows are matched through `field` instead.
+ *
+ * The same column is typed differently across layers (some are String where a
+ * column happened to be empty at publish). applyFilters checks each layer's
+ * real field type and drops the numeric half of the test where it would be
+ * invalid, so a mistyped column degrades to a text-only match rather than
+ * erroring the whole query.                                                  */
+export const FUNDING_SOURCES = [
+  { label: "Local",     field: "Local",                                  values: ["Local"] },
+  { label: "2020 Bond", field: "f_2020_Bond",                            values: ["2020 Bond"] },
+  { label: "HOME",      field: "HOME",                                   values: ["HOME"] },
+  { label: "CDBG",      field: "Community_Development_Block_Grant_CDBG", values: ["Community Development Block Grant (CDBG)"] },
+  { label: "DAHF",      field: "Dedicated_Affordable_Housing_Fund_DAHF", values: ["Dedicated Affordable Housing Fund (DAHF)"] },
+  { label: "Other",     field: "Other",                                  values: ["Other"] },
+];
+
 /* --- Resident-level field maps --------------------------------------------- *
  * These are the fields present on BOTH the de-identified and the real layers.
  * The Internal build spreads extra PII keys (borrower, address, …) on top; the
@@ -151,28 +173,46 @@ export const OTHER_FIELDS_BASE = {
  * detail per layer (see config.internal.js).                                   */
 export const HUD_BASE = "https://services.arcgis.com/VTyQ9soqVukalItT/arcgis/rest/services";
 export const WAKE = "STATE2KX='37' AND CURCNTY_NM LIKE 'Wake%'";
+
+/* HUD stores authority names in full federal form. Shorten them for display.
+ * This layer is NOT all RHA — 12 of the 15 Wake records are the Raleigh
+ * authority and 3 are the county's (Garner / Wake Forest / Wendell), which is
+ * why the layer keeps its "(incl. RHA)" name and the popup names the specific
+ * authority. Values not listed fall through unchanged, so an authority that
+ * appears later still shows its real name rather than being dropped.          */
+export const HOUSING_AUTHORITY_LABELS = {
+  "Housing Authority of the City of Raleigh": "Raleigh Housing Authority (RHA)",
+  "Housing Authority of the County of Wake":  "Wake County Housing Authority",
+};
+
 export const HUD_LAYERS_BASE = [
   {
     id: "hud_public_housing",
-    title: "Public Housing Developments (incl. RHA)",
+    /* Must stay identical to this layer's legend entry in index.html — the same
+     * string is the filter toggle label, so a mismatch reads as two layers.    */
+    title: "HUD Public Housing properties",
     url: `${HUD_BASE}/Public_Housing_Developments/FeatureServer/0`,
     where: WAKE, style: "square", color: "#01426A",
-    name: ["PROJECT_NAME", "FORMAL_PARTICIPANT_NAME"], addr: ["STD_ADDR", "STD_CITY"], units: "TOTAL_UNITS",
-    extra: [["Housing authority", "FORMAL_PARTICIPANT_NAME"], ["ACC units", "ACC_UNITS"]],
+    /* Unit counts are deliberately off this popup: `units` is null so no "Units"
+     * row renders, and ACC units is not in `extra`. Housing authority stays. */
+    name: ["PROJECT_NAME", "FORMAL_PARTICIPANT_NAME"], addr: ["STD_ADDR", "STD_CITY"], units: null,
+    extra: [["Housing authority", "FORMAL_PARTICIPANT_NAME", HOUSING_AUTHORITY_LABELS]],
     visible: false,
   },
   {
     id: "hud_mf_assisted",
-    title: "Multifamily Assisted (Section 8 / 202 / 811)",
+    title: "Multifamily Assisted (Section 8, 202, 811)",
     url: `${HUD_BASE}/Multifamily_Properties_Assisted/FeatureServer/0`,
     where: WAKE, style: "diamond", color: "#189ABC",
-    name: ["PROPERTY_NAME_TEXT"], addr: ["ADDRESS_LINE1_TEXT", "PLACED_BASE_CITY_NAME_TEXT"], units: "TOTAL_ASSISTED_UNIT_COUNT",
-    extra: [["Total units", "TOTAL_UNIT_COUNT"], ["Category", "PROPERTY_CATEGORY_NAME"]],
+    /* Unit counts are deliberately off this popup as well — neither assisted
+     * units nor total units render. Category stays. */
+    name: ["PROPERTY_NAME_TEXT"], addr: ["ADDRESS_LINE1_TEXT", "PLACED_BASE_CITY_NAME_TEXT"], units: null,
+    extra: [["Category", "PROPERTY_CATEGORY_NAME"]],
     visible: false,
   },
   {
     id: "hud_lihtc",
-    title: "LIHTC Properties (tax-credit)",
+    title: "Low Income Housing Tax Credit properties (LIHTC)",
     url: `${HUD_BASE}/LIHTC/FeatureServer/0`,
     where: "PROJ_ST='NC' AND CURCNTY_NM LIKE 'Wake%'", style: "triangle", color: "#FBAE40",
     name: ["PROJECT"], addr: ["PROJ_ADD", "PROJ_CTY"], units: null,
@@ -183,7 +223,11 @@ export const HUD_LAYERS_BASE = [
     id: "hud_insured_mf",
     title: "HUD-Insured Multifamily",
     url: `${HUD_BASE}/HUD_Insured_Multifamily_Properties/FeatureServer/0`,
-    where: WAKE, style: "x", color: "#A8322D",
+    /* Not rust — the BRT reference layer below is #A8322D, and two rust symbols
+     * on the map at once are indistinguishable. #99bbff matches the "Not
+     * specified" slice in the funding pie. This is a stroke-only "x", so the
+     * colour is applied to the outline rather than the fill (see hudMarker).    */
+    where: WAKE, style: "x", color: "#99bbff",
     name: ["PROPERTY_NAME_TEXT"], addr: ["ADDRESS_LINE1_TEXT", "PLACED_BASE_CITY_NAME_TEXT"], units: "MAXIMUM_CONTRACT_UNIT_COUNT",
     extra: [["Program", "PROGRAM_TYPE1"]],
     visible: false,
@@ -193,14 +237,32 @@ export const HUD_LAYERS_BASE = [
 /* --- Reference / boundary layers (live City services) ---------------------- */
 export const REFERENCE_LAYERS = [
   {
+    /* `localData` -> shipped as GeoJSON in this repo rather than fetched from
+     * `url`. maps.raleighnc.gov is blocked at the browser level for at least
+     * some clients when the page is served from the public GitHub Pages
+     * domain, so both boundary layers silently failed to load on the live site
+     * while working from localhost. `url` is kept as the provenance record and
+     * is what refresh_boundary_data.py re-pulls from.
+     *
+     * minScale/maxScale: 0 = no restriction either direction, explicit rather
+     * than relying on whatever the source service happens to publish -- per
+     * 2026-08-12 request, both boundary layers must render at any zoom. */
     id: "council_districts", title: "City Council Districts", type: "feature",
     url: "https://maps.raleighnc.gov/arcgis/rest/services/Boundaries/MapServer/2",
+    localData: "./council_districts.geojson",
     kind: "boundary", color: "#01426A", labelField: "COUNCIL_DIST", visible: true,
+    minScale: 0, maxScale: 0,
   },
   {
+    /* The source service publishes minScale: 76800 (only draws once zoomed in
+     * closer than ~1:76,800) — the app opens around 1:288,895, so checking this
+     * box did nothing and looked broken. Only 26 polygons citywide, so drawing
+     * them at every zoom isn't cluttered; overridden to 0 below. */
     id: "ncods", title: "Neighborhood Conservation Overlay Districts (NCODs)", type: "feature",
     url: "https://maps.raleighnc.gov/arcgis/rest/services/Planning/Overlays/MapServer/9",
+    localData: "./ncods.geojson",
     kind: "boundary", color: "#189ABC", labelField: "OLAY_NAME", visible: false,
+    minScale: 0, maxScale: 0,
   },
   {
     id: "transit_routes", title: "Transit Routes (GoRaleigh)", type: "feature",
@@ -212,22 +274,110 @@ export const REFERENCE_LAYERS = [
     url: "https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/Bus_Rapid_Transit_Corridors/FeatureServer/0",
     kind: "transit", color: "#A8322D", width: 4, labelField: "Name", visible: false,
   },
+  /* ---- Census (ACS) choropleths ------------------------------------------
+   * Both layers are Esri "Living Atlas" ACS views published by esri_demographics.
+   * They share the same tract geometry and GEOID, so they line up exactly, but
+   * they are two separate services and therefore two separate toggles.
+   *
+   * TRACT, not block group. The previous layer here
+   * (RaleighBlockGroups_2014_2018_AllFields) was block group, but it mixed ACS
+   * 2014-2018 tenure percentages with Esri MODELLED current-year estimates
+   * (the _CY fields), and it carried no cost-burden data at all. These layers
+   * are wholly ACS tabulations. The cost is resolution: Raleigh is 293 block
+   * groups but only 119 tracts, roughly 2.5 to 1, so the map reads smoother and
+   * small-area contrasts around individual projects get averaged away.
+   *
+   * Both are "(Latest)" views, meaning Esri repoints them at each new ACS
+   * 5-year release. Field NAMES are stable (they are census table codes) but the
+   * VINTAGE moves without warning, which is why the panel note reads the year
+   * from the service instead of hardcoding it.
+   *
+   * Both are national. `where` is REQUIRED: without it these are ~85,000-tract
+   * queries per indicator.
+   *
+   * `ratio` indicators declare their numerator and denominator fields once;
+   * index.html generates BOTH the Arcade valueExpression that draws the map and
+   * the JavaScript that computes class breaks from that one declaration, so the
+   * two can never drift apart.
+   */
   {
-    id: "market_indicators", title: "Market Supply Indicators (by block group)", type: "feature",
-    url: "https://services.arcgis.com/v400IkDOw1ad7Yad/arcgis/rest/services/RaleighBlockGroups_2014_2018_AllFields/FeatureServer/0",
+    id: "acs_housing", title: "ACS Housing Characteristics (by census tract)", type: "feature",
+    url: "https://P3ePLMYs2RVChkJx.svcs.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Population_and_Housing_Basics_View_Boundaries/FeatureServer/2",
     kind: "choropleth", defaultIndicator: "pct_owner_occ",
+    where: "State = 'North Carolina' AND County = 'Wake County'",
     indicators: [
-      { id: "pct_owner_occ",     label: "% Owner-Occupied",              field: "PercentOwnerOccupied2018", format: "percent"  },
-      { id: "pct_renter_occ",    label: "% Renter-Occupied",             field: "PercentRenterOccupied2018", format: "percent" },
-      { id: "renter_units",      label: "Renter-Occupied Units (count)", field: "RENTER_CY_1",              format: "number"   },
-      { id: "median_hh_income",  label: "Median Household Income",       field: "MEDHINC_CY_1",             format: "currency" },
-      { id: "median_home_value", label: "Median Home Value",             field: "MEDVAL_CY_1",              format: "currency" },
-      { id: "pct_vacant",        label: "% Vacant Housing Units",        field: null, expr: "IIf($feature.TOTHU_CY_1>0, $feature.VACANT_CY_1/$feature.TOTHU_CY_1*100, null)", format: "percent" },
-      { id: "median_rent",       label: "Median Gross Rent (needs ACS layer)",       field: null, format: "currency" },
-      { id: "pct_owner_cb",      label: "% Owners Cost-Burdened (needs ACS layer)",  field: null, format: "percent"  },
-      { id: "pct_renter_cb",     label: "% Renters Cost-Burdened (needs ACS layer)", field: null, format: "percent"  },
+      { id: "pct_owner_occ",    label: "Owner-Occupied Share of Occupied Units",  field: "B25003_calc_pctOwnE", format: "percent" },
+      { id: "pct_renter_occ",   label: "Renter-Occupied Share of Occupied Units", format: "percent",
+        ratio: { num: ["B25003_003E"], den: ["B25003_001E"] } },
+      { id: "renter_units",     label: "Renter-Occupied Housing Units (count)",   field: "B25003_003E", format: "number" },
+      { id: "median_hh_income", label: "Median Household Income",                 field: "B19049_001E", format: "currency" },
+      { id: "median_home_value",label: "Median Home Value (owner-occupied)",      field: "B25077_001E", format: "currency" },
+      /* CONTRACT rent, not gross rent: this is the rent charged to the tenant
+       * and it EXCLUDES tenant-paid utilities. No ACS Living Atlas layer
+       * publishes median GROSS rent, so the label must keep saying contract.
+       * Note the cost-burden layer below IS computed on gross rent (B25070), so
+       * rent level and rent burden here rest on different bases. */
+      { id: "median_contract_rent", label: "Median Contract Rent (excludes utilities)", field: "B25058_001E", format: "currency" },
+      { id: "pct_vacant",       label: "Vacant Share of All Housing Units",       format: "percent",
+        ratio: { num: ["B25002_003E"], den: ["B25002_001E"] } },
     ],
+    tableFields: ["GEOID", "NAME", "County"],
     ramp: ["#F3F9EF", "#DAEFD3", "#A8C23E", "#73AB45", "#4C8C40", "#0D6937"],
+    visible: false,
+  },
+  {
+    id: "acs_cost_burden", title: "ACS Housing Cost Burden (by census tract)", type: "feature",
+    url: "https://P3ePLMYs2RVChkJx.svcs.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Housing_Costs_View_Boundaries/FeatureServer/2",
+    kind: "choropleth", defaultIndicator: "pct_renter_cb",
+    where: "State = 'North Carolina' AND County = 'Wake County'",
+    indicators: [
+      /* Esri's own B25070_calc_pctGE30pctE divides by B25070_001E, which
+       * INCLUDES the "not computed" households (B25070_011E): renters whose
+       * rent-to-income ratio the Census could not calculate, mostly zero or
+       * negative reported income. Verified against all 230 Wake County tracts,
+       * 0 mismatches against that formula. Including them in the base deflates
+       * the rate. Median effect countywide is only 0.84 points, but the tail is
+       * severe: tract 37183053804 reads 33.8% from Esri's field versus 80.0%
+       * with "not computed" excluded, because 41 of its 71 renter households are
+       * uncomputable. So we exclude them, which is also how HUD reports it. */
+      /* minDen: a rate needs a base to mean anything. Wake tract 37183053901
+       * has SIX renter households and all six are burdened, so it renders 100%
+       * and lands in the darkest class next to tracts with 800 renters. Verified
+       * on the live service: 37183053006 is 33 of 33, 37183980100 is 5 of 5.
+       * Below 30 households the map shows the tract as suppressed and the table
+       * says how many households there actually were. */
+      { id: "pct_renter_cb", label: "Renter Households Paying 30%+ of Income on Housing", format: "percent",
+        ratio: { num: ["B25070_007E", "B25070_008E", "B25070_009E", "B25070_010E"],
+                 den: ["B25070_001E"], denMinus: ["B25070_011E"], minDen: 30 } },
+      /* There is NO all-owner cost-burden field. B25091 splits owners into
+       * with-mortgage and without-mortgage and Esri publishes a percentage for
+       * each half separately, against its own half as denominator (verified).
+       * The halves diverge widely (one Wake tract: 13.1% with a mortgage, 29.9%
+       * without), so neither can stand in for "owners". Combine the two COUNTS
+       * over all owner households instead. B25091_002E + B25091_013E equals
+       * B25091_001E in all 230 tracts, so the two parts are exhaustive. _012E
+       * and _023E are the two "not computed" cells, excluded to match the renter
+       * metric above; countywide they are only 0.54% of owners. */
+      { id: "pct_owner_cb", label: "Owner Households Paying 30%+ of Income on Housing", format: "percent",
+        ratio: { num: ["B25091_calc_numMortGE30pctE", "B25091_calc_numNoMortGE30pctE"],
+                 den: ["B25091_001E"], denMinus: ["B25091_012E", "B25091_023E"], minDen: 30 } },
+      /* SEVERE burden, 50%+ of income. Same denominators as the 30%+ pair above
+       * so the two read as a nested pair rather than two unrelated rates. Esri
+       * publishes no calc field for either, but the underlying cells are there:
+       * B25070_010E is the renter 50%+ cell, and B25091_011E / B25091_022E are
+       * the owner 50%+ cells for with- and without-mortgage households. */
+      { id: "pct_renter_scb", label: "Renter Households Paying 50%+ of Income on Housing", format: "percent",
+        ratio: { num: ["B25070_010E"],
+                 den: ["B25070_001E"], denMinus: ["B25070_011E"], minDen: 30 } },
+      { id: "pct_owner_scb", label: "Owner Households Paying 50%+ of Income on Housing", format: "percent",
+        ratio: { num: ["B25091_011E", "B25091_022E"],
+                 den: ["B25091_001E"], denMinus: ["B25091_012E", "B25091_023E"], minDen: 30 } },
+    ],
+    tableFields: ["GEOID", "NAME", "County"],
+    /* Warm ramp, deliberately not the green used above: on this layer a high
+     * value is a bad outcome, and reusing the "more is greener" ramp would read
+     * as the opposite. */
+    ramp: ["#FDF3EF", "#FBDFD3", "#F3B49B", "#E07B5C", "#C4502F", "#A8322D"],
     visible: false,
   },
 ];
